@@ -30,7 +30,7 @@ class my_gui(Frame):
         self.mutex = 0
         self.m_list = {}
         self.selected = False
-        self.FOLD = r'E:\m\music'
+        #self.FOLD = r'E:\m\music'
         self.FOLD = 'Documents/sublime/danmu_diange/music'
 
     def initUI(self):

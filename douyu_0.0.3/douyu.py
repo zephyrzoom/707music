@@ -10,13 +10,13 @@ import sys
 import os
 import platform
 from urllib import request
-import danmu_play_music
 from tkinter import *
 from tkinter import ttk
 from html import unescape as unescape_html
 import mplay
 from tkinter import font
 import shutil
+from tkinter import messagebox
 
 
 class my_gui(Frame):
@@ -29,23 +29,49 @@ class my_gui(Frame):
 
 
         self.mutex = 0
-        self.m_list = {}
+        self.m_list = {}    # list from search netcloud
         self.selected = False
-        self.FOLD = r'E:\m\music'
-        #self.FOLD = 'Desktop/m/music'
+        #self.FOLD = r'E:\m\music'
+        self.FOLD = 'Documents/sublime/danmu_diange/music'
+
+
+
+
+
+
 
     def initUI(self):
+        self.MUSIC_LIST='Documents/sublime/danmu_diange/douyu_0.0.3/music_list.json'
+        with open(self.MUSIC_LIST,'r') as f:
+            self.play_list = json.loads(f.read())   # list from json
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         mainframe = ttk.Frame(self.root)
-        bigFont = font.Font(size=16, weight='bold')
-        self.text = Text(mainframe, bg="white", width=70, height=25, state=DISABLED, font=bigFont)
+        bigFont = font.Font(size=12, weight='bold')
+        self.text = Text(mainframe, bg="white", width=50, height=25, state=DISABLED, font=bigFont)
+        self.lb_play_list=StringVar()
+        self.lb_play_list.set(self.play_list_4_show())
+        print(self.play_list)
+        self.label = ttk.Label(mainframe, textvariable=self.lb_play_list, font=bigFont, width=20)
         mainframe.grid(column=0,row=0)
         self.text.grid(column=0,row=0)
+        self.label.grid(column=1, row=0)
+
+
 
     def write_text(self, nick, content):
         self.text.config(state=NORMAL)
         self.text.insert("end",nick+": "+content+"\n")
         self.text.config(state=DISABLED)
         self.text.yview('end')
+
+    def on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            with open(self.MUSIC_LIST,'w') as f:
+                json.dump(self.play_list, f)
+            self.root.destroy()
+
+
 
 ###############################################################################
     def is_exit(self):
@@ -381,10 +407,10 @@ class my_gui(Frame):
             self.selected = True
             self.write_text('系统','此歌曲无法显示')
     """分析弹幕
-    
+
     """
     def analysis_danmu(self, nick, content):
-        self.write_text('测试',str(self.mutex))
+        #self.write_text('测试',str(self.mutex))
         content = content.split(' ')
         if content[0] == '点歌':
             if self.mutex == 0:
@@ -421,11 +447,21 @@ class my_gui(Frame):
                     song = mplay.select(selected_song, self.m_list)
                     if song != -1:
                         self.selected = True
-                        self.write_text('系统','歌曲加载中...')
-                        music_path = mplay.save_song_to_disk(song, self.FOLD)
-                        threading.Thread(target=mplay.playmp3, args=([music_path])).start()
-                        self.write_text('系统','歌曲开始播放')
                         self.mutex = 0
+                        music_path = mplay.save_song_to_disk(song, self.FOLD)
+                        # add to list
+                        print(music_path)
+                        print(self.play_list)
+                        self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path})
+                        self.lb_play_list.set(self.play_list_4_show())
+                        # with open(self.MUSIC_LIST, 'w') as f:
+                        #     json.dump(m_list, f)
+                        print(self.play_list['music list'][-1])
+
+                        # with open(self.MUSIC_LIST, 'r') as f:
+                        #     m_list = json.loads(f.read())
+                        #     self.write_text('song',m_list['music list'][1]['mname'])
+
                     else:
                         self.write_text('系统','%s 请按照序号选歌' % nick)
                 except:
@@ -435,6 +471,27 @@ class my_gui(Frame):
         else:
             pass
 
+    def play_mp3(self):
+        while 1:
+            while self.play_list['music list']:
+                p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
+                while not p.returncode:
+                    print(p)
+                    time.sleep(5)
+                self.f5_list()
+                self.lb_play_list.set(self.play_list_4_show())  # refresh play list
+                print(self.play_list)
+            else:
+                time.sleep(10)# no music play, wait for sb diange
+
+    def f5_list(self):
+        del(self.play_list['music list'][0])
+
+    def play_list_4_show(self):
+        tmp_str='play list\n\n'
+        for i,v in enumerate(self.play_list['music list']):
+            tmp_str=''.join([tmp_str,str(i+1),' %s:%s' % (v['id'],v['mname']), '\n'])
+        return tmp_str
 
 ###############################################################################
 
@@ -443,6 +500,7 @@ def maintk():
     app = my_gui(root)
     #app.delete_music_start()
     threading.Thread(target=app.main).start()
+    threading.Thread(target=app.play_mp3).start()
     #root.after(2000, app.main)
     root.mainloop()
 
