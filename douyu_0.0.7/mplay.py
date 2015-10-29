@@ -13,11 +13,15 @@ import random
 import os
 import sys
 import time
+import re
+import lyric
 
 """ffplay path
 """
-#FFMPEG=r'E:\ffmpeg\bin\ffplay.exe'
-FFMPEG='ffplay'
+FFMPEG=r'E:\ffmpeg\bin\ffplay.exe'
+#FFMPEG='ffplay'
+
+#CLOUDMUSIC=r"E:\Program Files\Netease\CloudMusic\cloudmusic.exe"
 
 """set cookies
 """
@@ -136,10 +140,13 @@ if the path is exist
 """
 def playmp3(filename):
     if os.path.exists(filename):
-        #p = Popen([FFMPEG, '-autoexit', filename])
-        call([FFMPEG, '-autoexit', filename])
-        os.remove(filename)
-        #return p
+        p = Popen([FFMPEG, '-autoexit', filename])
+        #p = Popen([CLOUDMUSIC, filename])
+        
+        #call([FFMPEG, '-autoexit', filename])
+        #os.remove(filename)
+
+        return p
     else:
         return -1
 
@@ -147,6 +154,7 @@ def playmp3(filename):
 @id int: ordinal number
 @return -1: wrong id
 """
+
 def select(select_id, song_list):
     #print(id, name)
     #resp_js = search_song_by_name(name)
@@ -160,20 +168,95 @@ def select(select_id, song_list):
     detail_url = 'http://music.163.com/api/song/detail?ids=[%d]' % song_id
     with urllib.request.urlopen(detail_url) as resp:
         song_js = json.loads(resp.read().decode('utf-8'))
-    return song_js['songs'][0] # 音质？
+    return song_js['songs'][0],song_id # 音质？
+
+"""切歌
+"""
+def killu(p):
+    p.kill()    #切了之后没有删除歌曲
+
+
+
+def getLyric():
+    if 'lyric' not in self.songs[str(self.playing_id)].keys():
+        self.songs[str(self.playing_id)]["lyric"] = []
+    if len(self.songs[str(self.playing_id)]["lyric"]) > 0:
+        return
+    netease = NetEase()
+    lyric = netease.song_lyric(self.playing_id)
+    if (not lyric == []) or lyric == '未找到歌词':
+        lyric = lyric.split('\n')
+    self.songs[str(self.playing_id)]["lyric"] = lyric
+    return
+
+
+def song_lyric(music_id):
+    action = "http://music.163.com/api/song/lyric?os=osx&id=" + str(music_id) + "&lv=-1&kv=-1&tv=-1"
+    try:
+        #params = urllib.parse.urlencode(params).encode('utf-8')
+        with urllib.request.urlopen(action) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        if data['lrc']['lyric'] != None:
+            lyric_info = data['lrc']['lyric']
+            return lyric_info
+        else:
+            return None
+        
+    except:
+        return None
+
+"""
+id:选歌序号
+"""
+def get_songid(name,selectid):
+    mlist=search_song_by_name(name)
+    return mlist['songs'][selectid]['id']
+
 
 if __name__ == '__main__':
-    # folder = 'E:\m\music'
-    # name = input('song:')
-    # m_list = search_song_by_name(name)
-    # show_music_list(m_list)
-    # sid = int(input('select:'))
-    # song = select(sid, m_list)
-    # fpath = save_song_to_disk(song, folder)
-    # playmp3(fpath)
-    p = playmp3('Desktop/m/a.mp3')
-    print(p.returncode)
-    time.sleep(3)
-    p.kill()
-    print(p.returncode)
+    mlist=search_song_by_name('晴天')
+    song_id = mlist['songs'][0]['id']
+    print(song_id)
+    show_music_list(mlist)
 
+    lyric1=song_lyric(song_id)
+    print(lyric1)
+    l=lyric.Lyric(lyric1)
+    l.process_lyric()
+    print(l.time_minus)
+    print(l.cut_lyric)
+    path=save_song_to_disk(select(1,mlist),r'E:\m\music')
+    playmp3(path)
+    for i in range(len(l.cut_lyric)):
+        print(l.cut_lyric[i])
+        time.sleep(l.time_minus[i])
+        print(l.time_minus[i])
+
+    # lyric.
+    # lyric_line=lyric1.split('\n')
+    
+
+    # l=lyric.Lyric(lyric_line[4])
+
+
+    # time_minus=[]
+    # lyrics=[]
+    # for v in lyric_line:
+    #     try:
+    #         l=lyric.Lyric(v)
+    #         if len(l.millsec)==3:
+    #             print(l.millsec)
+    #             print(int(l.minite)*60+int(l.sec)+int(l.millsec)/1000)
+    #             time_minus.append(int(l.minite)*60+int(l.sec)+int(l.millsec)/1000)
+    #         elif len(l.millsec)==2:
+    #             time_minus.append(int(l.minite)*60+int(l.sec)+int(l.millsec)/1000)
+    #         lyrics.append(l.content)
+    #     except Exception as e:
+    #         print('error')
+    # print(lyrics)
+    # print(len(lyrics))
+    # for i,v in enumerate(time_minus):
+    #     if i<len(time_minus)-1:
+    #         time_minus[i]=round(time_minus[i+1]-time_minus[i],3)
+    # print(time_minus)
+    # print(len(time_minus))
