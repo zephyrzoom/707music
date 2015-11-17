@@ -18,6 +18,8 @@ from tkinter import font
 import shutil
 from tkinter import messagebox
 import lyric
+import logging
+import datetime
 
 
 class my_gui(Frame):
@@ -41,7 +43,7 @@ class my_gui(Frame):
         self.g_ip= 'livecmt.bilibili.com'
         self.g_port= 88
         self.g_exit= False
-        
+
 
 
     def initUI(self):
@@ -63,33 +65,40 @@ class my_gui(Frame):
         self.text.grid(column=0,row=0)
         self.label.grid(column=1, row=0)
         self.lyric_label.grid(column=0, row=1, columnspan=2)
-        self.textcolor='blue'
-        
+        self.textcolor='black'
+
+        date=datetime.datetime.now()
+        fname='%d-%d-%d_%d-%d-%d'%(date.year,date.month,date.day,date.hour,date.minute,date.second)
+
+        logging.basicConfig(level=logging.DEBUG,
+                format='%(asctime)s %(message)s',
+                filename=r'..\log\%s.log'%fname,
+                filemode='w')
 
     def change_rand_color(self,position):
-        colors=['red','blue','orange','yellow','green','cyan','violet']
-        rand_color=random.randint(0,6)
+        colors=['red','blue','orange','yellow','green','cyan','violet','black','white']
+        rand_color=random.randint(0,8)
         if position=='字体':
             while self.textcolor==colors[rand_color]:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
             self.textcolor=colors[rand_color]
             while self.textcolor==self.text['bg']:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
                 self.textcolor=colors[rand_color]
 
             self.text['fg']=self.textcolor
         if position=='背景':
-            
+
             while self.text['bg']==colors[rand_color]:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
             self.text['bg']=colors[rand_color]
             while self.text['bg']==self.textcolor:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
                 self.text['bg']=colors[rand_color]
-            
+
 
     def write_text(self, nick, content):
-        
+
         self.text.config(state=NORMAL)
         self.text['fg']=self.textcolor
         self.text.insert("end",nick+": "+content+"\n")
@@ -127,7 +136,7 @@ class my_gui(Frame):
             data_length= int.from_bytes(s.recv(2),'big')-4
             #msg
             if data_length<0:
-                print('badlength',data_length)
+                #print('badlength',data_length)
                 return bdata_type, b'undifined'
             total_data=[]
             while data_length>0:
@@ -176,7 +185,7 @@ class my_gui(Frame):
                 print('***', 'live-count: ', int.from_bytes(bmsg,'big'),'***')
             elif msgtype==b'\x00\x04': #msg
                 msg= self.unpackage(bmsg)
-                print(msg)
+                #print(msg)
                 # msg_dict= dict(zip(g_res_00_02, msg))
                 # #print(msg_dict)
                 # msg_userinfo_dict= dict(zip(g_res_00_02_userinfo, msg_dict['userinfo']))
@@ -185,7 +194,8 @@ class my_gui(Frame):
                 try:
                     nick=msg['info'][2][1]
                     content=msg['info'][1]
-                    print(nick, ': ', content)
+                    #print(nick, ': ', content)
+                    self.write_log('socket','%s:%s'%(nick,content))
                     self.analysis_danmu(nick,content)
                 except Exception as e:
                     pass
@@ -298,7 +308,7 @@ class my_gui(Frame):
                         # add to list
                         self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path,'sid':song_id})
                         self.lb_play_list.set(self.play_list_4_show())
-                        
+
                         self.write_text('系统','%s 选歌成功 已加入播放列表' % nick)
                         self.handle_lvl(nick,1)
                         with open(self.VIP_LIST,'w') as f:
@@ -333,7 +343,7 @@ class my_gui(Frame):
                     if cut_lvl < 2 and nick != cut_nick:
                         self.write_text('%s' % cut_nick,'%s 我才1级,你忍心切我?' % nick)
                     elif cut_lvl >= lvl and nick != cut_nick:
-                      
+
                         self.write_text('%s(%d级)' % (cut_nick,cut_lvl),'%s(%d级) 比我级高才能切哦' % (nick,lvl))
                     else:
                         if cut_num == 1:
@@ -356,7 +366,7 @@ class my_gui(Frame):
                                     self.write_text('系统','%s 欺负比你低10级以上的小朋友,扣掉10点经验' % nick)
                                     self.handle_lvl(nick,-10)
             except Exception as e:
-                self.write_text('系统','%s 注意切歌格式' % nick)    
+                self.write_text('系统','%s 注意切歌格式' % nick)
 ######################################################################
 
         elif content.strip() == '等级':
@@ -364,8 +374,8 @@ class my_gui(Frame):
 #####################################################################################
         elif contents[0]=='变色':
             #print(contents[0])
-            contents[1]=''.join(contents[1:]).strip()
             try:
+                contents[1]=''.join(contents[1:]).strip()
                 if contents[1]=='字体':
                     self.change_rand_color(contents[1])
                     self.write_text('系统','%s 字体切换成功' % nick)
@@ -381,9 +391,9 @@ class my_gui(Frame):
         elif contents[0]=='赠送':
             try:
                 give_nick=contents[1]
-                
+
                 if self.is_nick_in_vips(give_nick):
-                    
+
                     try:
                         exp=int(contents[2])
                         if exp >= 0:
@@ -398,7 +408,7 @@ class my_gui(Frame):
                     except Exception as e:
                         self.write_text('系统','%s 注意经验格式' % nick)
                 else:
-                    
+
                     self.write_text('系统','%s 查无此人 让他先点首歌' % give_nick)
             except Exception as e:
                 self.write_text('系统','%s 注意格式' % nick)
@@ -447,7 +457,7 @@ class my_gui(Frame):
                 self.is_music_play=True
                 threading.Thread(target=self.show_lyric).start()
                 self.p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
-                
+
                 self.p.wait()
                 self.is_music_play=False
                 self.f5_list()
@@ -463,7 +473,7 @@ class my_gui(Frame):
     def chadui(self,p1,p2):
         self.play_list['music list'].insert(p2,self.play_list['music list'][p1])
         del(self.play_list['music list'][p1+1])
-        
+
     def play_list_4_show(self):
         tmp_str='  播放列表\n\n'
         for i,v in enumerate(self.play_list['music list']):
@@ -578,6 +588,11 @@ class my_gui(Frame):
         else:
             return False
 
+    """logging
+    """
+    def write_log(self, logtype, message):
+        message='[%s] %s' % (logtype,message)
+        logging.info(message)
 
 ###############################################################################
 
@@ -599,4 +614,4 @@ if __name__ == '__main__':
     # main(url)
 
     maintk()
-    
+

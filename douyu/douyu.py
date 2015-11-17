@@ -18,6 +18,9 @@ from tkinter import font
 import shutil
 from tkinter import messagebox
 import lyric
+import logging
+import datetime
+
 
 
 class my_gui(Frame):
@@ -34,11 +37,10 @@ class my_gui(Frame):
         self.selected = False
         self.FOLD = r'E:\m\music'
         #self.FOLD = 'Documents/sublime/danmu_diange/music'
-        self.VIP_LIST=r'E:\m\douyu_0.0.7\level.json'
+        self.VIP_LIST=r'E:\m\douyu_0.0.5\level.json'
         with open(self.VIP_LIST, 'r') as f:
             self.vips = json.loads(f.read())
         self.is_music_play=False
-
 
 
     def initUI(self):
@@ -60,28 +62,36 @@ class my_gui(Frame):
         self.text.grid(column=0,row=0)
         self.label.grid(column=1, row=0)
         self.lyric_label.grid(column=0, row=1, columnspan=2)
-        self.textcolor='blue'
+        self.textcolor='black'
+
+        date=datetime.datetime.now()
+        fname='%d-%d-%d_%d-%d-%d'%(date.year,date.month,date.day,date.hour,date.minute,date.second)
+
+        logging.basicConfig(level=logging.DEBUG,
+                format='%(asctime)s %(message)s',
+                filename=r'..\log\%s.log'%fname,
+                filemode='w')
 
 
     def change_rand_color(self,position):
-        colors=['red','blue','orange','yellow','green','cyan','violet']
-        rand_color=random.randint(0,6)
+        colors=['red','blue','orange','yellow','green','cyan','violet','black','white']
+        rand_color=random.randint(0,8)
         if position=='字体':
             while self.textcolor==colors[rand_color]:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
             self.textcolor=colors[rand_color]
             while self.textcolor==self.text['bg']:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
                 self.textcolor=colors[rand_color]
 
             self.text['fg']=self.textcolor
         if position=='背景':
 
             while self.text['bg']==colors[rand_color]:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
             self.text['bg']=colors[rand_color]
             while self.text['bg']==self.textcolor:
-                rand_color=random.randint(0,6)
+                rand_color=random.randint(0,8)
                 self.text['bg']=colors[rand_color]
 
 
@@ -271,6 +281,7 @@ class my_gui(Frame):
                     except Exception as e:
                         continue
                     #print(nick, ':', content)
+                    self.write_log('socket','%s:%s'%(nick,content))
                     self.analysis_danmu(nick, content)
                     #danmu_play_music.get_music(nick, content)
                     #threading.Thread(target=danmu_play_music.get_music,args=([nick, content]))
@@ -279,14 +290,16 @@ class my_gui(Frame):
                 sui= self.unpackage(msg.get(b'sui',b'nick@=undifined//00'))
                 nick= sui[b'nick'].decode('utf8')
                 # print(self.vips)
-                # self.handle_lvl(nick, 10)
-                # with open(self.VIP_LIST,'w') as f:
-                #     json.dump(self.vips, f)
+                self.handle_lvl(nick, 10)
+                self.write_text('系统','%s 通过赠送鱼丸获得10点经验'%nick)
+                self.write_log('yuwan','赠送 %s 10点经验'%nick)
+                with open(self.VIP_LIST,'w') as f:
+                    json.dump(self.vips, f)
                 # print(self.vips)
                 # print(type(nick))
                 # print(type(msg[b'ms']))
-                print('***', nick, '送给主播', int(msg[b'ms']),\
-                       '个鱼丸 (', self.cast_wetght(msg[b'dst_weight']), ') ***')
+               # print('***', nick, '送给主播', int(msg[b'ms']),\
+                #       '个鱼丸 (', self.cast_wetght(msg[b'dst_weight']), ') ***')
                 #notify(nick, '送给主播' + str(int(msg[b'ms'])) + '个鱼丸')
             elif msgtype==b'keeplive':
                 pass
@@ -533,7 +546,7 @@ class my_gui(Frame):
             try:
                 cut_num = int(cut_num)
                 if cut_num > len(self.play_list['music list']):
-                    self.write_text('系统','%s 你瞎啊！' % nick)
+                    self.write_text('系统','%s 你瞎啊！哪有你要切的歌' % nick)
                 else:
                     cut_nick=self.play_list['music list'][cut_num-1]['id']
                     for i in self.vips['vips']:
@@ -608,6 +621,7 @@ class my_gui(Frame):
                                 with open(self.VIP_LIST,'w') as f:
                                     json.dump(self.vips,f)
                                 self.write_text('%s'%nick,'我送给 %s 了%d点经验'%(give_nick,exp))
+                                self.write_log('send','%s 赠送给 %s %d点经验'%(nick,give_nick,exp))
                             else:
                                 self.write_text('系统','%s 小样儿 你经验不够'%nick)
                         else:
@@ -794,6 +808,12 @@ class my_gui(Frame):
                 return True
         else:
             return False
+
+    """logging
+    """
+    def write_log(self, logtype, message):
+        message='[%s] %s' % (logtype,message)
+        logging.info(message)
 
 
 ###############################################################################
