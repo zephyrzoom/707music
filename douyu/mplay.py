@@ -16,8 +16,8 @@ import time
 
 """ffplay path
 """
-#FFMPEG=r'E:\ffmpeg\bin\ffplay.exe'
-FFMPEG='ffplay'
+FFMPEG=r'E:\ffmpeg\bin\ffplay.exe'
+#FFMPEG='ffplay'
 
 """set cookies
 """
@@ -136,10 +136,11 @@ if the path is exist
 """
 def playmp3(filename):
     if os.path.exists(filename):
-        #p = Popen([FFMPEG, '-autoexit', filename])
-        call([FFMPEG, '-autoexit', filename])
-        os.remove(filename)
-        #return p
+        p = Popen([FFMPEG, '-autoexit', filename])
+        #call([FFMPEG, '-autoexit', filename])
+        #os.remove(filename)
+
+        return p
     else:
         return -1
 
@@ -162,6 +163,10 @@ def select(select_id, song_list):
         song_js = json.loads(resp.read().decode('utf-8'))
     return song_js['songs'][0] # 音质？
 
+def killu(p):
+    time.sleep(3)
+    p.kill()    #切了之后没有删除歌曲
+
 if __name__ == '__main__':
     # folder = 'E:\m\music'
     # name = input('song:')
@@ -171,9 +176,12 @@ if __name__ == '__main__':
     # song = select(sid, m_list)
     # fpath = save_song_to_disk(song, folder)
     # playmp3(fpath)
-    p = playmp3('Desktop/m/a.mp3')
-    print(p.returncode)
+    p = playmp3(r'E:\m\a.mp3')
+    print('returncode:',p.returncode)
     time.sleep(3)
-    p.kill()
-    print(p.returncode)
-
+    threading.Thread(target=killu, args=([p])).start()
+    p.wait()
+    print('returncode:',p.returncode)
+    p = playmp3(r'E:\m\a.mp3')
+    p.wait()
+    print('returncode:',p.returncode)

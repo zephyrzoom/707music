@@ -27,31 +27,30 @@ class my_gui(Frame):
 
         self.g_exit= False
 
-
+        self.p=None
         self.mutex = 0
         self.m_list = {}    # list from search netcloud
         self.selected = False
-        #self.FOLD = r'E:\m\music'
-        self.FOLD = 'Documents/sublime/danmu_diange/music'
-
-
-
-
+        self.FOLD = r'E:\m\music'
+        #self.FOLD = 'Documents/sublime/danmu_diange/music'
+        self.VIP_LIST=r'E:\m\douyu_0.0.4\level.json'
+        with open(self.VIP_LIST, 'r') as f:
+            self.vips = json.loads(f.read())
+        
 
 
 
     def initUI(self):
-        self.MUSIC_LIST='Documents/sublime/danmu_diange/douyu_0.0.3/music_list.json'
+        self.MUSIC_LIST=r'E:\m\douyu_0.0.4\music_list.json'
         with open(self.MUSIC_LIST,'r') as f:
             self.play_list = json.loads(f.read())   # list from json
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         mainframe = ttk.Frame(self.root)
         bigFont = font.Font(size=12, weight='bold')
-        self.text = Text(mainframe, bg="white", width=50, height=25, state=DISABLED, font=bigFont)
+        self.text = Text(mainframe, bg="white", width=50, height=30, state=DISABLED, font=bigFont)
         self.lb_play_list=StringVar()
         self.lb_play_list.set(self.play_list_4_show())
-        print(self.play_list)
         self.label = ttk.Label(mainframe, textvariable=self.lb_play_list, font=bigFont, width=20)
         mainframe.grid(column=0,row=0)
         self.text.grid(column=0,row=0)
@@ -69,11 +68,13 @@ class my_gui(Frame):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             with open(self.MUSIC_LIST,'w') as f:
                 json.dump(self.play_list, f)
+            with open(self.VIP_LIST,'w') as f:
+                json.dump(self.vips, f)
             self.root.destroy()
 
 
 
-###############################################################################
+#####################################弹幕#####################################
     def is_exit(self):
         self.g_exit
         return self.g_exit
@@ -153,15 +154,15 @@ class my_gui(Frame):
 
         self.sendmsg(s,b'type@=loginreq/username@=/password@=/roomid@='+rid+b'/\x00')
 
-        #print('==========longinres')
+        print('==========longinres')
         longinres= self.unpackage(self.recvmsg(s))
 
-        #print('==========msgrepeaterlist')
+        print('==========msgrepeaterlist')
         msgrepeaterlist= self.unpackage(self.recvmsg(s))
         lst= self.unpackage(msgrepeaterlist[b'list'])
         tb= self.unpackage(random.choice(tuple(lst.values())))
 
-        #print('==========setmsggroup')
+        print('==========setmsggroup')
         setmsggroup= self.unpackage(self.recvmsg(s))
 
         ret= {'rid':rid,
@@ -176,7 +177,9 @@ class my_gui(Frame):
                 try:
                     self.sendmsg(s,b'type@=keeplive/tick@='+str(random.randint(1,99)).encode('ascii')+b'/\x00')
                 except Exception as e:
-                    threading.Thread(target=keepalive_send).start()
+                    print(e)
+                    threading.Thread(target=self.main).start()
+                    exit()
                 time.sleep(45)
             s.close()
         threading.Thread(target=keepalive_send).start()
@@ -185,15 +188,17 @@ class my_gui(Frame):
                 try:
                     bmsg= self.recvmsg(s)
                 except Exception as e:
-                    threading.Thread(target=keepalive_recv).start()
-                #print('*** usr alive:',unpackage(bmsg),'***')
+                    print(e)
+                    threading.Thread(target=self.main).start()
+                    exit()
+                print('*** usr alive:',self.unpackage(bmsg),'***')
             s.close()
         threading.Thread(target=keepalive_recv).start()
         return ret
 
     def get_danmu(self,rid=b'5275', ip=b'danmu.douyutv.com', port=8001, username=b'visitor42', gid=b'0'):
         "args needs bytes not str"
-        #print('==========danmu')
+        print('==========danmu')
 
         s= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((ip,int(port)))
@@ -206,7 +211,9 @@ class my_gui(Frame):
                 try:
                     self.sendmsg(s,b'type@=keeplive/tick@='+str(random.randint(1,99)).encode('ascii')+b'/\x00')
                 except Exception as e:
-                    threading.Thread(target=keepalive).start()
+                    print(e)
+                    threading.Thread(target=self.main).start()
+                    exit()
                 time.sleep(45)
             s.close()
         threading.Thread(target=keepalive).start()
@@ -215,9 +222,9 @@ class my_gui(Frame):
             try:
                 bmsg= self.recvmsg(s)
             except Exception as e:
-                print('restarting...')
+                print(e)
                 threading.Thread(target=self.main).start()
-                break
+                exit()
             if not bmsg:
                 print('*** connection break ***')
 
@@ -238,8 +245,15 @@ class my_gui(Frame):
             elif msgtype==b'donateres':
                 sui= self.unpackage(msg.get(b'sui',b'nick@=undifined//00'))
                 nick= sui[b'nick'].decode('utf8')
-                #print('***', nick, '送给主播', int(msg[b'ms']),\
-                #       '个鱼丸 (', cast_wetght(msg[b'dst_weight']), ') ***')
+                print(self.vips)
+                self.handle_lvl(nick, 10)
+                with open(self.VIP_LIST,'w') as f:
+                    json.dump(self.vips, f)
+                print(self.vips)
+                print(type(nick))
+                print(type(msg[b'ms']))
+                print('***', nick, '送给主播', int(msg[b'ms']),\
+                       '个鱼丸 (', self.cast_wetght(msg[b'dst_weight']), ') ***')
                 #notify(nick, '送给主播' + str(int(msg[b'ms'])) + '个鱼丸')
             elif msgtype==b'keeplive':
                 pass
@@ -365,6 +379,7 @@ class my_gui(Frame):
         #print('login_room_info', login_room_info)
         self.write_text('系统','已启动...')
         self.get_danmu(**login_room_info)
+    
 
 
 ###############################################################################
@@ -377,7 +392,7 @@ class my_gui(Frame):
                 time.sleep(0.1)
                 count = times*10+1-i
                 if count % 100 == 0:
-                    self.write_text('系统','将在%d秒之后自动播放第一首歌' % int(count/10))
+                    self.write_text('系统','将在%d秒之后自动选择第一首歌' % int(count/10))
             else:
                 return
 
@@ -410,12 +425,13 @@ class my_gui(Frame):
 
     """
     def analysis_danmu(self, nick, content):
+        #print(self.vips)
         #self.write_text('测试',str(self.mutex))
-        content = content.split(' ')
-        if content[0] == '点歌':
+        contents = content.split(' ')
+        if contents[0] == '点歌':
             if self.mutex == 0:
                 self.mutex = nick
-                song_name = ''.join(content[1:])
+                song_name = ''.join(contents[1:])
                 self.m_list = mplay.search_song_by_name(song_name)
                 if self.m_list == -1:
                     self.mutex = 0
@@ -426,7 +442,7 @@ class my_gui(Frame):
                     threading.Thread(target=self.time_count, args=([nick, 30])).start()
             elif self.mutex == nick:
                 self.selected = True
-                song_name = ''.join(content[1:])
+                song_name = ''.join(contents[1:])
                 self.m_list = mplay.search_song_by_name(song_name)
                 if self.m_list == -1:
                     self.mutex = 0
@@ -436,51 +452,71 @@ class my_gui(Frame):
                     self.show_music_list()
                     threading.Thread(target=self.time_count, args=([nick, 30])).start()
             else:
-                self.write_text('系统','%s 请等待 %s 点歌' % (nick, self.mutex))
-        elif content[0] == '选歌':
+                self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
+        elif contents[0] == '选歌':
             if self.mutex == 0:
                 self.write_text('系统','%s 请先点歌' % nick)
             elif self.mutex == nick:
-                selected_song = ''.join(content[1:])
+                selected_song = ''.join(contents[1:])
                 try:
                     selected_song = int(selected_song)
                     song = mplay.select(selected_song, self.m_list)
                     if song != -1:
                         self.selected = True
                         self.mutex = 0
+                        self.write_text('系统','%s 正在对选择进行处理...' % nick)
                         music_path = mplay.save_song_to_disk(song, self.FOLD)
                         # add to list
-                        print(music_path)
-                        print(self.play_list)
                         self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path})
                         self.lb_play_list.set(self.play_list_4_show())
-                        # with open(self.MUSIC_LIST, 'w') as f:
-                        #     json.dump(m_list, f)
-                        print(self.play_list['music list'][-1])
-
-                        # with open(self.MUSIC_LIST, 'r') as f:
-                        #     m_list = json.loads(f.read())
-                        #     self.write_text('song',m_list['music list'][1]['mname'])
-
+                        
+                        self.write_text('系统','%s 选歌成功' % nick)
+                        self.handle_lvl(nick,1)
+                        with open(self.VIP_LIST,'w') as f:
+                            json.dump(self.vips, f)
                     else:
                         self.write_text('系统','%s 请按照序号选歌' % nick)
                 except:
                     self.write_text('系统', '%s 请注意选歌格式' % nick)
             else:
-                self.write_text('系统','%s 请等待 %s 选歌' % (nick, self.mutex))
+                self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
+        elif content.strip() == '切歌':
+            if self.play_list['music list']:
+                cut_nick=self.play_list['music list'][0]['id']
+                for i in self.vips['vips']:
+                    if cut_nick==i['name']:
+                        cut_lvl=self.calc_level(i['lvl'])
+                        break
+                for i in self.vips['vips']:
+                    if nick == i['name']:
+                        lvl = self.calc_level(i['lvl'])
+                        break
+                else:
+                    lvl = 0
+                if cut_lvl >= lvl and nick != cut_nick:
+                  
+                    self.write_text('%s(%d级)' % (cut_nick,cut_lvl),'%s(%d级) 你比我级高?还想切我的歌' % (nick,lvl))
+                else:
+                    mplay.killu(self.p)
+                    if nick == cut_nick:
+                        self.write_text('%s' % nick,'我把自己的歌切了')
+                    else:
+                        self.write_text('%s' % nick,'%s 我把你的的歌切了,你打我啊' % cut_nick)
+            else:
+                self.write_text('系统','哪有歌让你切啊!')
+        elif content.strip() == '等级':
+            self.write_text('%s' % nick,'我怎么才%d级' % self.get_level(nick))
         else:
             pass
 
     def play_mp3(self):
         while 1:
             while self.play_list['music list']:
-                p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
-                # while not p.returncode:
-                #     print(p)
-                #     time.sleep(5)
+                self.p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
+                self.p.wait()
                 self.f5_list()
                 self.lb_play_list.set(self.play_list_4_show())  # refresh play list
-                print(self.play_list)
+                #print(self.play_list)
             else:
                 time.sleep(10)# no music play, wait for sb diange
 
@@ -490,8 +526,45 @@ class my_gui(Frame):
     def play_list_4_show(self):
         tmp_str='  播放列表\n\n'
         for i,v in enumerate(self.play_list['music list']):
-            tmp_str=''.join([tmp_str,str(i+1),'. %s:\n  %s' % (v['id'],v['mname']), '\n'])
+            tmp_str=''.join([tmp_str,str(i+1),'. %s:\n   %s' % (v['id'],v['mname']), '\n'])
         return tmp_str
+
+    def get_level(self,nick):
+        print(nick)
+        print(self.vips)
+        for i in self.vips['vips']:
+            if nick == i['name']:
+                return self.calc_level(i['lvl'])
+        else:
+            return -1
+
+    def calc_level(self,lvl):
+        start=1
+        MAX=100
+        while start < MAX:
+            lvl_value=(start*(start+1))/2
+            if lvl < lvl_value:
+                return start-1
+            else:
+                start += 1
+        else:
+            self.write_text('系统','等级已到上限')
+            return -1
+
+    def write_level(self,nick,lvl):
+        for i in self.vips['vips']:
+            if i['name'] == nick:
+                i['lvl'] += lvl
+                break
+        else:
+            self.vips['vips'].append({'name':nick,'lvl':lvl})
+
+    def handle_lvl(self,nick, exp):
+        lvl = self.get_level(nick)
+        self.write_level(nick,exp)   #100鱼丸=10点经验
+        after_lvl=self.get_level(nick)
+        if after_lvl > lvl:
+            self.write_text('%s' % nick,'我终于升到%d级了' % after_lvl)
 
 ###############################################################################
 
@@ -499,7 +572,10 @@ def maintk():
     root = Tk()
     app = my_gui(root)
     #app.delete_music_start()
+
     threading.Thread(target=app.main).start()
+
+    
     threading.Thread(target=app.play_mp3).start()
     #root.after(2000, app.main)
     root.mainloop()
@@ -510,4 +586,6 @@ if __name__ == '__main__':
     # url= sys.argv[1] if len(sys.argv)>1 else 'http://www.douyutv.com/im707'
     # #danmu_play_music.delete_music_start()
     # main(url)
+
     maintk()
+    
