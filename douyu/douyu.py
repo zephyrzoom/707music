@@ -17,6 +17,7 @@ import mplay
 from tkinter import font
 import shutil
 from tkinter import messagebox
+import lyric
 
 
 class my_gui(Frame):
@@ -33,33 +34,41 @@ class my_gui(Frame):
         self.selected = False
         self.FOLD = r'E:\m\music'
         #self.FOLD = 'Documents/sublime/danmu_diange/music'
-        self.VIP_LIST=r'E:\m\douyu_0.0.4\level.json'
+        self.VIP_LIST=r'E:\m\douyu_0.0.5\level.json'
         with open(self.VIP_LIST, 'r') as f:
             self.vips = json.loads(f.read())
+        self.is_music_play=False
         
 
 
 
     def initUI(self):
-        self.MUSIC_LIST=r'E:\m\douyu_0.0.4\music_list.json'
+        self.MUSIC_LIST=r'E:\m\douyu_0.0.5\music_list.json'
         with open(self.MUSIC_LIST,'r') as f:
             self.play_list = json.loads(f.read())   # list from json
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         mainframe = ttk.Frame(self.root)
         bigFont = font.Font(size=12, weight='bold')
-        self.text = Text(mainframe, bg="white", width=50, height=30, state=DISABLED, font=bigFont)
+        self.text = Text(mainframe, bg="orange", width=50, height=29, state=DISABLED, font=bigFont)
         self.lb_play_list=StringVar()
         self.lb_play_list.set(self.play_list_4_show())
-        self.label = ttk.Label(mainframe, textvariable=self.lb_play_list, font=bigFont, width=20)
+        self.label = ttk.Label(mainframe, textvariable=self.lb_play_list, font=bigFont, width=20, foreground='blue')
+        self.lyric_val=StringVar()
+        self.lyric_label=ttk.Label(mainframe, textvariable=self.lyric_val, font=bigFont, padding=10, foreground='red')
+
         mainframe.grid(column=0,row=0)
         self.text.grid(column=0,row=0)
         self.label.grid(column=1, row=0)
-
+        self.lyric_label.grid(column=0, row=1, columnspan=2)
 
 
     def write_text(self, nick, content):
+        colors=['red','blue','orange','yellow',
+        'green','cyan','violet']
+        rand_color=random.randint(0,6)
         self.text.config(state=NORMAL)
+        self.text['fg']=colors[1]
         self.text.insert("end",nick+": "+content+"\n")
         self.text.config(state=DISABLED)
         self.text.yview('end')
@@ -178,7 +187,8 @@ class my_gui(Frame):
                     self.sendmsg(s,b'type@=keeplive/tick@='+str(random.randint(1,99)).encode('ascii')+b'/\x00')
                 except Exception as e:
                     print(e)
-                    threading.Thread(target=self.main).start()
+                    self.write_text('系统','我崩溃了')
+                    #threading.Thread(target=self.main).start()
                     exit()
                 time.sleep(45)
             s.close()
@@ -189,7 +199,8 @@ class my_gui(Frame):
                     bmsg= self.recvmsg(s)
                 except Exception as e:
                     print(e)
-                    threading.Thread(target=self.main).start()
+                    self.write_text('系统','我崩溃了')
+                    #threading.Thread(target=self.main).start()
                     exit()
                 print('*** usr alive:',self.unpackage(bmsg),'***')
             s.close()
@@ -212,7 +223,8 @@ class my_gui(Frame):
                     self.sendmsg(s,b'type@=keeplive/tick@='+str(random.randint(1,99)).encode('ascii')+b'/\x00')
                 except Exception as e:
                     print(e)
-                    threading.Thread(target=self.main).start()
+                    self.write_text('系统','我崩溃了')
+                    #threading.Thread(target=self.main).start()
                     exit()
                 time.sleep(45)
             s.close()
@@ -223,7 +235,8 @@ class my_gui(Frame):
                 bmsg= self.recvmsg(s)
             except Exception as e:
                 print(e)
-                threading.Thread(target=self.main).start()
+                self.write_text('系统','我崩溃了')
+                #threading.Thread(target=self.main).start()
                 exit()
             if not bmsg:
                 print('*** connection break ***')
@@ -245,13 +258,13 @@ class my_gui(Frame):
             elif msgtype==b'donateres':
                 sui= self.unpackage(msg.get(b'sui',b'nick@=undifined//00'))
                 nick= sui[b'nick'].decode('utf8')
-                print(self.vips)
-                self.handle_lvl(nick, 10)
-                with open(self.VIP_LIST,'w') as f:
-                    json.dump(self.vips, f)
-                print(self.vips)
-                print(type(nick))
-                print(type(msg[b'ms']))
+                # print(self.vips)
+                # self.handle_lvl(nick, 10)
+                # with open(self.VIP_LIST,'w') as f:
+                #     json.dump(self.vips, f)
+                # print(self.vips)
+                # print(type(nick))
+                # print(type(msg[b'ms']))
                 print('***', nick, '送给主播', int(msg[b'ms']),\
                        '个鱼丸 (', self.cast_wetght(msg[b'dst_weight']), ') ***')
                 #notify(nick, '送给主播' + str(int(msg[b'ms'])) + '个鱼丸')
@@ -428,31 +441,36 @@ class my_gui(Frame):
         #print(self.vips)
         #self.write_text('测试',str(self.mutex))
         contents = content.split(' ')
+################################################
         if contents[0] == '点歌':
-            if self.mutex == 0:
-                self.mutex = nick
-                song_name = ''.join(contents[1:])
-                self.m_list = mplay.search_song_by_name(song_name)
-                if self.m_list == -1:
-                    self.mutex = 0
-                    self.write_text('系统','%s 没有您要点的歌' % nick)
+            if len(self.play_list['music list']) < 13:
+                if self.mutex == 0:
+                    self.mutex = nick
+                    song_name = ''.join(contents[1:])
+                    self.m_list = mplay.search_song_by_name(song_name)
+                    if self.m_list == -1:
+                        self.mutex = 0
+                        self.write_text('系统','%s 没有您要点的歌' % nick)
+                    else:
+                        self.selected = False
+                        self.show_music_list()
+                        threading.Thread(target=self.time_count, args=([nick, 40])).start()
+                elif self.mutex == nick:
+                    self.selected = True
+                    song_name = ''.join(contents[1:])
+                    self.m_list = mplay.search_song_by_name(song_name)
+                    if self.m_list == -1:
+                        self.mutex = 0
+                        self.write_text('系统','%s 没有您要点的歌' % nick)
+                    else:
+                        self.selected = False
+                        self.show_music_list()
+                        threading.Thread(target=self.time_count, args=([nick, 30])).start()
                 else:
-                    self.selected = False
-                    self.show_music_list()
-                    threading.Thread(target=self.time_count, args=([nick, 30])).start()
-            elif self.mutex == nick:
-                self.selected = True
-                song_name = ''.join(contents[1:])
-                self.m_list = mplay.search_song_by_name(song_name)
-                if self.m_list == -1:
-                    self.mutex = 0
-                    self.write_text('系统','%s 没有您要点的歌' % nick)
-                else:
-                    self.selected = False
-                    self.show_music_list()
-                    threading.Thread(target=self.time_count, args=([nick, 30])).start()
+                    self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
             else:
-                self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
+                self.write_text('系统','%s 列表要爆炸了！' % nick)
+######################################################
         elif contents[0] == '选歌':
             if self.mutex == 0:
                 self.write_text('系统','%s 请先点歌' % nick)
@@ -460,14 +478,14 @@ class my_gui(Frame):
                 selected_song = ''.join(contents[1:])
                 try:
                     selected_song = int(selected_song)
-                    song = mplay.select(selected_song, self.m_list)
+                    song,song_id = mplay.select(selected_song, self.m_list)
                     if song != -1:
                         self.selected = True
                         self.mutex = 0
                         self.write_text('系统','%s 正在对选择进行处理...' % nick)
                         music_path = mplay.save_song_to_disk(song, self.FOLD)
                         # add to list
-                        self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path})
+                        self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path,'sid':song_id})
                         self.lb_play_list.set(self.play_list_4_show())
                         
                         self.write_text('系统','%s 选歌成功' % nick)
@@ -476,52 +494,98 @@ class my_gui(Frame):
                             json.dump(self.vips, f)
                     else:
                         self.write_text('系统','%s 请按照序号选歌' % nick)
-                except:
+                except Exception as e:
+                    print(e)
                     self.write_text('系统', '%s 请注意选歌格式' % nick)
             else:
                 self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
-        elif content.strip() == '切歌':
-            if self.play_list['music list']:
-                cut_nick=self.play_list['music list'][0]['id']
-                for i in self.vips['vips']:
-                    if cut_nick==i['name']:
-                        cut_lvl=self.calc_level(i['lvl'])
-                        break
-                for i in self.vips['vips']:
-                    if nick == i['name']:
-                        lvl = self.calc_level(i['lvl'])
-                        break
+###############################################################
+        elif contents[0] == '切歌':
+            cut_num = ''.join(contents[1:])
+            try:
+                cut_num = int(cut_num)
+                if cut_num > len(self.play_list['music list']):
+                    self.write_text('系统','%s 你瞎啊！' % nick)
                 else:
-                    lvl = 0
-                if cut_lvl >= lvl and nick != cut_nick:
-                  
-                    self.write_text('%s(%d级)' % (cut_nick,cut_lvl),'%s(%d级) 你比我级高?还想切我的歌' % (nick,lvl))
-                else:
-                    mplay.killu(self.p)
-                    if nick == cut_nick:
-                        self.write_text('%s' % nick,'我把自己的歌切了')
+                    cut_nick=self.play_list['music list'][cut_num-1]['id']
+                    for i in self.vips['vips']:
+                        if cut_nick==i['name']:
+                            cut_lvl=self.calc_level(i['lvl'])
+                            break
+                    for i in self.vips['vips']:
+                        if nick == i['name']:
+                            lvl = self.calc_level(i['lvl'])
+                            break
                     else:
-                        self.write_text('%s' % nick,'%s 我把你的的歌切了,你打我啊' % cut_nick)
-            else:
-                self.write_text('系统','哪有歌让你切啊!')
+                        lvl = 0
+
+                    if cut_lvl < 2 and nick != cut_nick:
+                        self.write_text('%s' % cut_nick,'%s 我才1级,你忍心切我?' % nick)
+                    elif cut_lvl >= lvl and nick != cut_nick:
+                      
+                        self.write_text('%s(%d级)' % (cut_nick,cut_lvl),'%s(%d级) 比我级高才能切哦' % (nick,lvl))
+                    else:
+                        if cut_num == 1:
+                            mplay.killu(self.p)
+                            if nick == cut_nick:
+                                self.write_text('%s' % nick,'我把自己的歌切了')
+                            else:
+                                self.write_text('%s' % nick,'%s 我把你的的歌切了,你打我啊' % cut_nick)
+                                if lvl-cut_lvl >= 10:
+                                    self.write_text('系统','%s 欺负比你低10级以上的小朋友,扣10点经验' % nick)
+                                    self.handle_lvl(nick,-10)
+                        else:
+                            self.f5_list(cut_num-1)
+                            self.lb_play_list.set(self.play_list_4_show())
+                            if nick == cut_nick:
+                                self.write_text('%s' % nick,'我把自己的歌切了')
+                            else:
+                                self.write_text('%s' % nick,'%s 我把你的的歌切了,你打我啊' % cut_nick)
+                                if lvl-cut_lvl >= 10:
+                                    self.write_text('系统','%s 欺负比你低10级以上的小朋友,扣掉10点经验' % nick)
+                                    self.handle_lvl(nick,-10)
+            except Exception as e:
+                self.write_text('系统','%s 注意切歌格式' % nick)    
+######################################################################
+
         elif content.strip() == '等级':
             self.write_text('%s' % nick,'我怎么才%d级' % self.get_level(nick))
+#####################################################################################
+
+        elif nick == '707472783':
+            if contents[0] == '经验':
+                try:
+                    contents[2] = int(contents[2])
+                    self.handle_lvl(contents[1],contents[2])
+                    with open(self.VIP_LIST,'w') as f:
+                        json.dump(self.vips, f)
+                    # with open(r'E:\m\douyu_0.0.5\log.txt','w') as f:
+                    #     f.write(' '.join(contents[1],contents[2],'\n'))
+                except Exception as e:
+                    print('经验值不对')
+###############################################################################
+
         else:
             pass
 
     def play_mp3(self):
         while 1:
             while self.play_list['music list']:
+                self.is_music_play=True
+                threading.Thread(target=self.show_lyric).start()
                 self.p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
+                
                 self.p.wait()
+                self.is_music_play=False
                 self.f5_list()
                 self.lb_play_list.set(self.play_list_4_show())  # refresh play list
+                time.sleep(3)
                 #print(self.play_list)
             else:
                 time.sleep(10)# no music play, wait for sb diange
 
-    def f5_list(self):
-        del(self.play_list['music list'][0])
+    def f5_list(self,num=0):
+        del(self.play_list['music list'][num])
 
     def play_list_4_show(self):
         tmp_str='  播放列表\n\n'
@@ -530,13 +594,11 @@ class my_gui(Frame):
         return tmp_str
 
     def get_level(self,nick):
-        print(nick)
-        print(self.vips)
         for i in self.vips['vips']:
             if nick == i['name']:
                 return self.calc_level(i['lvl'])
         else:
-            return -1
+            return 0
 
     def calc_level(self,lvl):
         start=1
@@ -566,18 +628,45 @@ class my_gui(Frame):
         if after_lvl > lvl:
             self.write_text('%s' % nick,'我终于升到%d级了' % after_lvl)
 
+
+    def show_lyric(self):
+        # name=self.play_list['music list'][0]['mname']
+        # selectid=self.play_list['music list'][0]['sid']
+        # print('sid:',selectid)
+        # songid=mplay.get_songid(name,selectid-1)
+        # print('songid:',songid)
+        songid=self.play_list['music list'][0]['sid']
+        getlyric=mplay.song_lyric(songid)
+        #print(getlyric)
+        if getlyric != None:
+            l = lyric.Lyric(getlyric)
+            l.process_lyric()
+            #print(l.time_minus)
+            self.lyric_val.set(getlyric)
+            #print(name,selectid,songid,l.time_minus,l.cut_lyric)
+            for i in range(len(l.cut_lyric)):
+                if self.is_music_play:
+                    #print(l.cut_lyric[i])
+                    #print(l.time_minus[i])
+                    self.lyric_val.set(l.cut_lyric[i])
+                    time.sleep(l.time_minus[i])
+                else:
+                    self.lyric_val.set('')
+                    return
+            else:
+                self.lyric_val.set('')
+        else:
+            self.lyric_val.set('无歌词')
 ###############################################################################
 
 def maintk():
     root = Tk()
     app = my_gui(root)
+    #app.write_text('wo','wo')
     #app.delete_music_start()
 
     threading.Thread(target=app.main).start()
-
-    
     threading.Thread(target=app.play_mp3).start()
-    #root.after(2000, app.main)
     root.mainloop()
 
 
