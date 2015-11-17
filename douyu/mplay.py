@@ -1,4 +1,5 @@
 #coding=utf-8
+from subprocess import Popen
 from subprocess import call
 import time
 import threading
@@ -11,6 +12,7 @@ import json
 import random
 import os
 import sys
+import time
 
 """ffplay path
 """
@@ -108,10 +110,8 @@ def save_song_to_disk(song, folder):
     except Exception as e:
         print('音乐获取失败')
         return -1
-    print(fpath)
-    f = open(fpath, 'wb')
-    f.write(data)
-    f.close()
+    with open(fpath, 'wb') as f:
+        f.write(data)
     return fpath
     #threading.Thread(target=playmp3, args=([os.path.join('E:\m\music', name+'.mp3')])).start()
 
@@ -136,8 +136,10 @@ if the path is exist
 """
 def playmp3(filename):
     if os.path.exists(filename):
+        #p = Popen([FFMPEG, '-autoexit', filename])
         call([FFMPEG, '-autoexit', filename])
         os.remove(filename)
+        #return p
     else:
         return -1
 
@@ -161,11 +163,17 @@ def select(select_id, song_list):
     return song_js['songs'][0] # 音质？
 
 if __name__ == '__main__':
-    folder = 'E:\m\music'
-    name = input('song:')
-    m_list = search_song_by_name(name)
-    show_music_list(m_list)
-    sid = int(input('select:'))
-    song = select(sid, m_list)
-    fpath = save_song_to_disk(song, folder)
-    playmp3(fpath)
+    # folder = 'E:\m\music'
+    # name = input('song:')
+    # m_list = search_song_by_name(name)
+    # show_music_list(m_list)
+    # sid = int(input('select:'))
+    # song = select(sid, m_list)
+    # fpath = save_song_to_disk(song, folder)
+    # playmp3(fpath)
+    p = playmp3('Desktop/m/a.mp3')
+    print(p.returncode)
+    time.sleep(3)
+    p.kill()
+    print(p.returncode)
+

@@ -16,6 +16,7 @@ from html import unescape as unescape_html
 import mplay
 from tkinter import font
 import shutil
+from tkinter import messagebox
 
 
 class my_gui(Frame):
@@ -28,23 +29,49 @@ class my_gui(Frame):
 
 
         self.mutex = 0
-        self.m_list = {}
+        self.m_list = {}    # list from search netcloud
         self.selected = False
         #self.FOLD = r'E:\m\music'
         self.FOLD = 'Documents/sublime/danmu_diange/music'
 
+
+
+
+
+
+
     def initUI(self):
+        self.MUSIC_LIST='Documents/sublime/danmu_diange/douyu_0.0.3/music_list.json'
+        with open(self.MUSIC_LIST,'r') as f:
+            self.play_list = json.loads(f.read())   # list from json
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         mainframe = ttk.Frame(self.root)
-        bigFont = font.Font(size=20, weight='bold')
-        self.text = Text(mainframe, bg="white", width=70, height=25, state=DISABLED, font=bigFont)
+        bigFont = font.Font(size=12, weight='bold')
+        self.text = Text(mainframe, bg="white", width=50, height=25, state=DISABLED, font=bigFont)
+        self.lb_play_list=StringVar()
+        self.lb_play_list.set(self.play_list_4_show())
+        print(self.play_list)
+        self.label = ttk.Label(mainframe, textvariable=self.lb_play_list, font=bigFont, width=20)
         mainframe.grid(column=0,row=0)
         self.text.grid(column=0,row=0)
+        self.label.grid(column=1, row=0)
+
+
 
     def write_text(self, nick, content):
         self.text.config(state=NORMAL)
         self.text.insert("end",nick+": "+content+"\n")
         self.text.config(state=DISABLED)
         self.text.yview('end')
+
+    def on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            with open(self.MUSIC_LIST,'w') as f:
+                json.dump(self.play_list, f)
+            self.root.destroy()
+
+
 
 ###############################################################################
     def is_exit(self):
@@ -342,80 +369,6 @@ class my_gui(Frame):
 
 ###############################################################################
 
-    """get music name from the danmu
-
-       return -1: wrong pattern
-             str: music name
-    """
-    def get_music_name(self, content):
-        contents = content.split(' ')
-        if len(contents) >= 3 and (contents[0] == 'm' or contents[0] == 'M'):
-            if contents[1] == 'n' or contents[1] == 'N':
-                return ' '.join(contents[2:])
-        return -1
-
-
-    """get select id from the danmu
-
-       return selected: a number > 0
-                    -1: wrong pattern
-    """
-    def get_select_id(self,content):
-        contents = content.split(' ')
-        if len(contents) >= 3 and (contents[0] == 'm' or contents[0] == 'M'):
-            if contents[1] == 's' or contents[1] == 'S':
-                selected = ''.join(contents[2:])
-                try:
-                    selected = int(selected)
-                except Exception as e:
-                    return -1
-                else:
-                    return selected
-        return -1
-
-    """dian ge
-
-
-
-    """
-
-    def get_music(self, nick, content):
-
-        if self.mutex == 0:
-            m_name = self.get_music_name(content)
-            if m_name != -1:
-                self.mutex = nick
-                self.m_list = mplay.search_song_by_name(m_name)
-                if self.m_list == -1:
-                    self.mutex = 0
-                    self.write_text('系统','没有要查的歌曲')
-                    return
-                else:
-                    self.show_music_list()
-                    self.selected = False
-                    threading.Thread(target=self.time_count, args=([nick, 30])).start()
-                return
-
-        elif nick == self.mutex:
-            m_select = self.get_select_id(content)
-            if m_select != -1:
-                selected_song = mplay.select(m_select, self.m_list)
-                if selected_song != -1:
-                    self.write_text('系统','歌曲加载中...')
-                    music_path = mplay.save_song_to_disk(selected_song, self.FOLD)
-                    threading.Thread(target=mplay.playmp3, args=([music_path])).start()
-                    self.selected = True
-                else:
-                    self.write_text('系统','请按照序号选歌')
-                    return
-            else:
-                self.write_text('系统','请选歌，注意格式，例如想选第一首:m s 1')
-                return
-            self.mutex = 0
-        else:
-            self.write_text('系统','请等待 %s 选歌' % self.mutex)
-
-
     def time_count(self,nick, times):
         time.sleep(10)
         #print('系统将在30秒后自动播放第一首')
@@ -457,7 +410,7 @@ class my_gui(Frame):
 
     """
     def analysis_danmu(self, nick, content):
-        self.write_text('测试',str(self.mutex))
+        #self.write_text('测试',str(self.mutex))
         content = content.split(' ')
         if content[0] == '点歌':
             if self.mutex == 0:
@@ -470,7 +423,6 @@ class my_gui(Frame):
                 else:
                     self.selected = False
                     self.show_music_list()
-
                     threading.Thread(target=self.time_count, args=([nick, 30])).start()
             elif self.mutex == nick:
                 self.selected = True
@@ -495,11 +447,21 @@ class my_gui(Frame):
                     song = mplay.select(selected_song, self.m_list)
                     if song != -1:
                         self.selected = True
-                        self.write_text('系统','歌曲加载中...')
-                        music_path = mplay.save_song_to_disk(song, self.FOLD)
-                        threading.Thread(target=mplay.playmp3, args=([music_path])).start()
-                        self.write_text('系统','歌曲开始播放')
                         self.mutex = 0
+                        music_path = mplay.save_song_to_disk(song, self.FOLD)
+                        # add to list
+                        print(music_path)
+                        print(self.play_list)
+                        self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path})
+                        self.lb_play_list.set(self.play_list_4_show())
+                        # with open(self.MUSIC_LIST, 'w') as f:
+                        #     json.dump(m_list, f)
+                        print(self.play_list['music list'][-1])
+
+                        # with open(self.MUSIC_LIST, 'r') as f:
+                        #     m_list = json.loads(f.read())
+                        #     self.write_text('song',m_list['music list'][1]['mname'])
+
                     else:
                         self.write_text('系统','%s 请按照序号选歌' % nick)
                 except:
@@ -509,108 +471,38 @@ class my_gui(Frame):
         else:
             pass
 
+    def play_mp3(self):
+        while 1:
+            while self.play_list['music list']:
+                p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
+                # while not p.returncode:
+                #     print(p)
+                #     time.sleep(5)
+                self.f5_list()
+                self.lb_play_list.set(self.play_list_4_show())  # refresh play list
+                print(self.play_list)
+            else:
+                time.sleep(10)# no music play, wait for sb diange
 
-    # def analysis_danmu(self, nick, content):
-    #     content = content.split(' ')
-    #     if self.mutex == 0:
-    #         if content[0] == '点歌':
-    #             self.mutex = nick
-    #             song_name = ''.join(content[1:])
-    #             self.m_list = mplay.search_song_by_name(song_name)
-    #             if self.m_list == -1:
-    #                 self.mutex = 0
-    #                 self.write_text('系统','%s 没有您要点的歌' % nick)
-    #             else:
-    #                 self.selected = False
-    #                 self.show_music_list()
-    #                 threading.Thread(target=self.time_count, args=([nick, 30])).start()
-    #         elif content[0] == '选歌':
-    #             self.write_text('系统','%s 请先点歌' % nick)
-    #     elif self.mutex == nick:
-    #         if content[0] == '点歌':
-    #             self.selected = True
-    #             song_name = ''.join(content[1:])
-    #             self.m_list = mplay.search_song_by_name(song_name)
-    #             if self.m_list == -1:
-    #                 self.mutex = 0
-    #                 self.write_text('系统','%s 没有您要点的歌' % nick)
-    #             else:
-    #                 self.selected = False
-    #                 self.show_music_list()
-    #                 threading.Thread(target=self.time_count, args=([nick, 30])).start()
-    #         elif content[0] == '选歌':
-    #             selected_song = ''.join(content[1:])
-    #             try:
-    #                 selected_song = int(selected_song)
-    #                 song = mplay.select(selected_song, self.m_list)
-    #                 if song != -1:
-    #                     self.selected = True
-    #                     self.write_text('系统','歌曲加载中...')
-    #                     music_path = mplay.save_song_to_disk(selected_song, self.FOLD)
-    #                     threading.Thread(target=mplay.playmp3, args=([music_path])).start()
-    #                     self.mutex = 0
-    #                 else:
-    #                     self.write_text('系统','%s 请按照序号选歌' % nick)
-    #             except:
-    #                 self.write_text('系统', '%s 请注意选歌格式' % nick)
-    #     else:
-    #         if content[0] == '点歌' or content[0] == '选歌':
-    #             self.write_text('系统','%s 请等待 %s 选歌' % ([nick, self.mutex]))
-    #         else:
-    #             pass
+    def f5_list(self):
+        del(self.play_list['music list'][0])
 
-
-
-    # def analysis_danmu(self, nick, content):
-    #     content=content.split(' ')
-    #     if (self.mutex == 0 and content[0] == '点歌') or (self.mutex == nick and content[0] == '点歌'):  #第一次点歌
-    #         self.mutex = nick
-    #         song_name = ''.join(content[1:])
-    #         self.m_list = mplay.search_song_by_name(song_name)
-    #         if self.m_list == -1:
-    #             self.mutex = 0  #别人可以点歌
-    #             self.write_text('系统','没有您要点的歌')
-    #         else:
-    #             self.show_music_list()
-    #             self.selected = False
-    #             threading.Thread(target=self.time_count, args=([nick, 30])).start()
-    #         return None
-    #     elif self.mutex == nick and content[0] == '选歌':
-    #         selected_song = ''.join(content[1:])
-    #         try:
-    #             selected_song = int(selected_song)
-    #             song = mplay.select(selected_song, self.m_list)
-    #             if song != -1:
-    #                 self.selected = True
-    #                 self.write_text('系统','歌曲加载中...')
-    #                 music_path = mplay.save_song_to_disk(selected_song, self.FOLD)
-    #                 threading.Thread(target=mplay.playmp3, args=([music_path])).start()
-    #                 self.mutex = 0
-    #             else:
-    #                 self.write_text('系统','请按照序号选歌')
-    #         except:
-    #             self.write_text('系统', '请注意格式')
-    #     elif self.mutex == 0 and content[0] == '选歌':
-    #         self.write_text('系统','%s 请先点歌' % nick)
-    #     elif (self.mutex != nick and content[0] == '点歌') or (self.mutex != nick and content[0] == '选歌'):
-    #         self.write_text('系统','%s 请等待 %s 选歌' % ([nick, self.mutex]))
-    #     else:
-    #         pass
-
-
+    def play_list_4_show(self):
+        tmp_str='  播放列表\n\n'
+        for i,v in enumerate(self.play_list['music list']):
+            tmp_str=''.join([tmp_str,str(i+1),'. %s:\n  %s' % (v['id'],v['mname']), '\n'])
+        return tmp_str
 
 ###############################################################################
 
 def maintk():
-    try:
-        root = Tk()
-        app = my_gui(root)
-        app.delete_music_start()
-        threading.Thread(target=app.main).start()
-        #root.after(2000, app.main)
-        root.mainloop()
-    except Exception as e:
-        print(e)
+    root = Tk()
+    app = my_gui(root)
+    #app.delete_music_start()
+    threading.Thread(target=app.main).start()
+    threading.Thread(target=app.play_mp3).start()
+    #root.after(2000, app.main)
+    root.mainloop()
 
 
 
