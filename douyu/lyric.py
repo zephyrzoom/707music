@@ -29,12 +29,12 @@ class Lyric():
                     print('无歌词1')
             except Exception as e:
                 print('无歌词2')
-        print(self.cut_lyric)
+        #print(self.cut_lyric)
         # print(len(self.cut_lyric))
         for i,v in enumerate(self.time_minus):
             if i<len(self.time_minus)-1:
                 self.time_minus[i]=round(self.time_minus[i+1]-self.time_minus[i],3)
-        print(self.time_minus)
+        #print(self.time_minus)
         # print(len(self.time_minus))
         try:
             firstm,firstsec,firstmili,firstcontent=self.get_line_lyric(self.lyric_lines[0])
@@ -48,7 +48,7 @@ class Lyric():
                     self.time_minus.insert(0,int(firstm)*60+int(firstsec)+int(firstmili)/100)
                 else:
                     print('lyric error')
-            print('########################')
-            print(self.time_minus)
+            #print('########################')
+            #print(self.time_minus)
         except Exception as e:
             print('无歌词3')

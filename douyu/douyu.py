@@ -50,7 +50,7 @@ class my_gui(Frame):
 
         mainframe = ttk.Frame(self.root)
         bigFont = font.Font(size=12, weight='bold')
-        self.text = Text(mainframe, bg="orange", width=50, height=29, state=DISABLED, font=bigFont)
+        self.text = Text(mainframe, bg="orange", width=55, height=29, state=DISABLED, font=bigFont)
         self.lb_play_list=StringVar()
         self.lb_play_list.set(self.play_list_4_show())
         self.label = ttk.Label(mainframe, textvariable=self.lb_play_list, font=bigFont, width=20, foreground='blue')
@@ -61,14 +61,35 @@ class my_gui(Frame):
         self.text.grid(column=0,row=0)
         self.label.grid(column=1, row=0)
         self.lyric_label.grid(column=0, row=1, columnspan=2)
+        self.textcolor='blue'
+        
 
+    def change_rand_color(self,position):
+        colors=['red','blue','orange','yellow','green','cyan','violet']
+        rand_color=random.randint(0,6)
+        if position=='字体':
+            while self.textcolor==colors[rand_color]:
+                rand_color=random.randint(0,6)
+            self.textcolor=colors[rand_color]
+            while self.textcolor==self.text['bg']:
+                rand_color=random.randint(0,6)
+                self.textcolor=colors[rand_color]
+
+            self.text['fg']=self.textcolor
+        if position=='背景':
+            
+            while self.text['bg']==colors[rand_color]:
+                rand_color=random.randint(0,6)
+            self.text['bg']=colors[rand_color]
+            while self.text['bg']==self.textcolor:
+                rand_color=random.randint(0,6)
+                self.text['bg']=colors[rand_color]
+            
 
     def write_text(self, nick, content):
-        colors=['red','blue','orange','yellow',
-        'green','cyan','violet']
-        rand_color=random.randint(0,6)
+        
         self.text.config(state=NORMAL)
-        self.text['fg']=colors[1]
+        self.text['fg']=self.textcolor
         self.text.insert("end",nick+": "+content+"\n")
         self.text.config(state=DISABLED)
         self.text.yview('end')
@@ -250,7 +271,7 @@ class my_gui(Frame):
                         content= msg.get(b'content',b'undefined').decode('utf8')
                     except Exception as e:
                         continue
-                    print(nick, ':', content)
+                    #print(nick, ':', content)
                     self.analysis_danmu(nick, content)
                     #danmu_play_music.get_music(nick, content)
                     #threading.Thread(target=danmu_play_music.get_music,args=([nick, content]))
@@ -441,33 +462,38 @@ class my_gui(Frame):
         #print(self.vips)
         #self.write_text('测试',str(self.mutex))
         contents = content.split(' ')
+        #print(contents[0],contents[1])
 ################################################
         if contents[0] == '点歌':
             if len(self.play_list['music list']) < 13:
-                if self.mutex == 0:
-                    self.mutex = nick
-                    song_name = ''.join(contents[1:])
-                    self.m_list = mplay.search_song_by_name(song_name)
-                    if self.m_list == -1:
-                        self.mutex = 0
-                        self.write_text('系统','%s 没有您要点的歌' % nick)
+                #print(self.is_over_diange(nick))
+                if not self.is_over_diange(nick):
+                    if self.mutex == 0:
+                        self.mutex = nick
+                        song_name = ''.join(contents[1:])
+                        self.m_list = mplay.search_song_by_name(song_name)
+                        if self.m_list == -1:
+                            self.mutex = 0
+                            self.write_text('系统','%s 没有您要点的歌' % nick)
+                        else:
+                            self.selected = False
+                            self.show_music_list()
+                            threading.Thread(target=self.time_count, args=([nick, 40])).start()
+                    elif self.mutex == nick:
+                        self.selected = True
+                        song_name = ''.join(contents[1:])
+                        self.m_list = mplay.search_song_by_name(song_name)
+                        if self.m_list == -1:
+                            self.mutex = 0
+                            self.write_text('系统','%s 没有您要点的歌' % nick)
+                        else:
+                            self.selected = False
+                            self.show_music_list()
+                            threading.Thread(target=self.time_count, args=([nick, 30])).start()
                     else:
-                        self.selected = False
-                        self.show_music_list()
-                        threading.Thread(target=self.time_count, args=([nick, 40])).start()
-                elif self.mutex == nick:
-                    self.selected = True
-                    song_name = ''.join(contents[1:])
-                    self.m_list = mplay.search_song_by_name(song_name)
-                    if self.m_list == -1:
-                        self.mutex = 0
-                        self.write_text('系统','%s 没有您要点的歌' % nick)
-                    else:
-                        self.selected = False
-                        self.show_music_list()
-                        threading.Thread(target=self.time_count, args=([nick, 30])).start()
+                        self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
                 else:
-                    self.write_text('%s' % self.mutex,'%s 等我选完,我手速慢' % nick)
+                    self.write_text('系统','%s 小伙子 你点的太多了 听听再点' % nick)
             else:
                 self.write_text('系统','%s 列表要爆炸了！' % nick)
 ######################################################
@@ -551,7 +577,19 @@ class my_gui(Frame):
         elif content.strip() == '等级':
             self.write_text('%s' % nick,'我怎么才%d级' % self.get_level(nick))
 #####################################################################################
-
+        elif contents[0]=='变色':
+            #print(contents[0])
+            contents[1]=''.join(contents[1:]).strip()
+            try:
+                if contents[1]=='字体':
+                    self.change_rand_color(contents[1])
+                    self.write_text('系统','%s 字体切换成功' % nick)
+                elif contents[1]=='背景':
+                    self.change_rand_color(contents[1])
+                    self.write_text('系统','%s 背景切换成功' % nick)
+            except Exception as e:
+                self.write_text('系统','%s 注意格式' % nick)
+##########################################################################
         elif nick == '707472783':
             if contents[0] == '经验':
                 try:
@@ -563,8 +601,7 @@ class my_gui(Frame):
                     #     f.write(' '.join(contents[1],contents[2],'\n'))
                 except Exception as e:
                     print('经验值不对')
-###############################################################################
-
+########################################################################
         else:
             pass
 
@@ -657,6 +694,19 @@ class my_gui(Frame):
                 self.lyric_val.set('')
         else:
             self.lyric_val.set('无歌词')
+
+    def is_over_diange(self,nick):
+        count=0
+        for i in self.play_list['music list']:
+            # print(i['mname'])
+            # print(count)
+            if nick == i['id']:
+                count += 1
+
+        if count >= 3:
+            return True
+        else:
+            return False
 ###############################################################################
 
 def maintk():
