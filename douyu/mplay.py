@@ -21,6 +21,8 @@ import lyric
 FFMPEG=r'E:\ffmpeg\bin\ffplay.exe'
 #FFMPEG='ffplay'
 
+#CLOUDMUSIC=r"E:\Program Files\Netease\CloudMusic\cloudmusic.exe"
+
 """set cookies
 """
 cookie_opener = urllib.request.build_opener()
@@ -139,6 +141,8 @@ if the path is exist
 def playmp3(filename):
     if os.path.exists(filename):
         p = Popen([FFMPEG, '-autoexit', filename])
+        #p = Popen([CLOUDMUSIC, filename])
+        
         #call([FFMPEG, '-autoexit', filename])
         #os.remove(filename)
 

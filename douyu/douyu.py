@@ -34,11 +34,10 @@ class my_gui(Frame):
         self.selected = False
         self.FOLD = r'E:\m\music'
         #self.FOLD = 'Documents/sublime/danmu_diange/music'
-        self.VIP_LIST=r'E:\m\douyu_0.0.5\level.json'
+        self.VIP_LIST=r'E:\m\douyu_0.0.7\level.json'
         with open(self.VIP_LIST, 'r') as f:
             self.vips = json.loads(f.read())
         self.is_music_play=False
-        
 
 
 
@@ -62,7 +61,7 @@ class my_gui(Frame):
         self.label.grid(column=1, row=0)
         self.lyric_label.grid(column=0, row=1, columnspan=2)
         self.textcolor='blue'
-        
+
 
     def change_rand_color(self,position):
         colors=['red','blue','orange','yellow','green','cyan','violet']
@@ -77,17 +76,17 @@ class my_gui(Frame):
 
             self.text['fg']=self.textcolor
         if position=='背景':
-            
+
             while self.text['bg']==colors[rand_color]:
                 rand_color=random.randint(0,6)
             self.text['bg']=colors[rand_color]
             while self.text['bg']==self.textcolor:
                 rand_color=random.randint(0,6)
                 self.text['bg']=colors[rand_color]
-            
+
 
     def write_text(self, nick, content):
-        
+
         self.text.config(state=NORMAL)
         self.text['fg']=self.textcolor
         self.text.insert("end",nick+": "+content+"\n")
@@ -413,7 +412,7 @@ class my_gui(Frame):
         #print('login_room_info', login_room_info)
         self.write_text('系统','已启动...')
         self.get_danmu(**login_room_info)
-    
+
 
 
 ###############################################################################
@@ -510,14 +509,17 @@ class my_gui(Frame):
                         self.mutex = 0
                         self.write_text('系统','%s 正在对选择进行处理...' % nick)
                         music_path = mplay.save_song_to_disk(song, self.FOLD)
-                        # add to list
-                        self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path,'sid':song_id})
-                        self.lb_play_list.set(self.play_list_4_show())
-                        
-                        self.write_text('系统','%s 选歌成功' % nick)
-                        self.handle_lvl(nick,1)
-                        with open(self.VIP_LIST,'w') as f:
-                            json.dump(self.vips, f)
+                        if music_path != -1:
+                            # add to list
+                            self.play_list['music list'].append({'id':nick,'mname':song['name'],'mpath':music_path,'sid':song_id})
+                            self.lb_play_list.set(self.play_list_4_show())
+
+                            self.write_text('系统','%s 选歌成功 已加入播放列表' % nick)
+                            self.handle_lvl(nick,1)
+                            with open(self.VIP_LIST,'w') as f:
+                                json.dump(self.vips, f)
+                        else:
+                            self.write_text('系统','%s 歌曲获取失败' % nick)
                     else:
                         self.write_text('系统','%s 请按照序号选歌' % nick)
                 except Exception as e:
@@ -548,7 +550,7 @@ class my_gui(Frame):
                     if cut_lvl < 2 and nick != cut_nick:
                         self.write_text('%s' % cut_nick,'%s 我才1级,你忍心切我?' % nick)
                     elif cut_lvl >= lvl and nick != cut_nick:
-                      
+
                         self.write_text('%s(%d级)' % (cut_nick,cut_lvl),'%s(%d级) 比我级高才能切哦' % (nick,lvl))
                     else:
                         if cut_num == 1:
@@ -571,7 +573,7 @@ class my_gui(Frame):
                                     self.write_text('系统','%s 欺负比你低10级以上的小朋友,扣掉10点经验' % nick)
                                     self.handle_lvl(nick,-10)
             except Exception as e:
-                self.write_text('系统','%s 注意切歌格式' % nick)    
+                self.write_text('系统','%s 注意切歌格式' % nick)
 ######################################################################
 
         elif content.strip() == '等级':
@@ -579,8 +581,8 @@ class my_gui(Frame):
 #####################################################################################
         elif contents[0]=='变色':
             #print(contents[0])
-            contents[1]=''.join(contents[1:]).strip()
             try:
+                contents[1]=''.join(contents[1:]).strip()
                 if contents[1]=='字体':
                     self.change_rand_color(contents[1])
                     self.write_text('系统','%s 字体切换成功' % nick)
@@ -590,6 +592,57 @@ class my_gui(Frame):
             except Exception as e:
                 self.write_text('系统','%s 注意格式' % nick)
 ##########################################################################
+        elif content.strip() == '经验':
+            self.write_text('系统','%s 你的经验值为%d' % (nick,self.get_exp(nick)))
+##############################################################################
+        elif contents[0]=='赠送':
+            try:
+                give_nick=contents[1]
+
+                if self.is_nick_in_vips(give_nick):
+
+                    try:
+                        exp=int(contents[2])
+                        if exp >= 0:
+                            if self.give_exp(nick,give_nick,exp):
+                                with open(self.VIP_LIST,'w') as f:
+                                    json.dump(self.vips,f)
+                                self.write_text('%s'%nick,'我送给 %s 了%d点经验'%(give_nick,exp))
+                            else:
+                                self.write_text('系统','%s 小样儿 你经验不够'%nick)
+                        else:
+                            self.write_text('系统','%s 负的是要抢经验吗?'%nick)
+                    except Exception as e:
+                        self.write_text('系统','%s 注意经验格式' % nick)
+                else:
+
+                    self.write_text('系统','%s 查无此人 让他先点首歌' % give_nick)
+            except Exception as e:
+                self.write_text('系统','%s 注意格式' % nick)
+###############################################################################
+        elif content.strip()=='插队':
+            if self.get_exp(nick) < 20:
+                self.write_text('系统','%s 经验不足20 老实排队吧 插队是壕的游戏' % nick)
+            else:
+                random_id=[]
+                for i,v in enumerate(self.play_list['music list']):
+                    if v['id'] == nick and i > 1:
+                        random_id.append(i)
+                if len(random_id) < 1:
+                    self.write_text('系统','%s 你并不能插' % nick)
+                else:
+                    r=random.randint(0,len(random_id)-1)
+                    p1=random_id[r]
+                    p2=random.randint(1,p1-1)
+                    self.chadui(p1,p2)
+                    self.lb_play_list.set(self.play_list_4_show())
+                    self.write_text('系统','%s 插队成功' % nick)
+                    chadui_exp=random.randint(1,20)
+                    self.handle_lvl(nick,-chadui_exp)
+                    with open(self.VIP_LIST,'w') as f:
+                        json.dump(self.vips, f)
+                    self.write_text('系统','%s 插队扣掉%d点经验' % (nick,chadui_exp))
+############################################################################
         elif nick == '707472783':
             if contents[0] == '经验':
                 try:
@@ -611,7 +664,7 @@ class my_gui(Frame):
                 self.is_music_play=True
                 threading.Thread(target=self.show_lyric).start()
                 self.p = mplay.playmp3(self.play_list['music list'][0]['mpath'])
-                
+
                 self.p.wait()
                 self.is_music_play=False
                 self.f5_list()
@@ -624,11 +677,22 @@ class my_gui(Frame):
     def f5_list(self,num=0):
         del(self.play_list['music list'][num])
 
+    def chadui(self,p1,p2):
+        self.play_list['music list'].insert(p2,self.play_list['music list'][p1])
+        del(self.play_list['music list'][p1+1])
+
     def play_list_4_show(self):
         tmp_str='  播放列表\n\n'
         for i,v in enumerate(self.play_list['music list']):
             tmp_str=''.join([tmp_str,str(i+1),'. %s:\n   %s' % (v['id'],v['mname']), '\n'])
         return tmp_str
+
+    def get_exp(self,nick):
+        for i in self.vips['vips']:
+            if nick == i['name']:
+                return i['lvl']
+        else:
+            return 0
 
     def get_level(self,nick):
         for i in self.vips['vips']:
@@ -639,7 +703,7 @@ class my_gui(Frame):
 
     def calc_level(self,lvl):
         start=1
-        MAX=100
+        MAX=1000
         while start < MAX:
             lvl_value=(start*(start+1))/2
             if lvl < lvl_value:
@@ -695,6 +759,8 @@ class my_gui(Frame):
         else:
             self.lyric_val.set('无歌词')
 
+    """列表中的歌是否超过3首
+    """
     def is_over_diange(self,nick):
         count=0
         for i in self.play_list['music list']:
@@ -707,6 +773,29 @@ class my_gui(Frame):
             return True
         else:
             return False
+
+    """送经验
+    return False:经验不够
+    """
+    def give_exp(self,nick,give_nick,exp):
+        origin_exp=self.get_exp(nick)
+        if origin_exp<exp:
+            return False
+        else:
+            self.handle_lvl(nick,-exp)
+            self.handle_lvl(give_nick,exp)
+            return True
+
+    """名字是否在列表中
+    """
+    def is_nick_in_vips(self, nick):
+        for i in self.vips['vips']:
+            if nick == i['name']:
+                return True
+        else:
+            return False
+
+
 ###############################################################################
 
 def maintk():
@@ -727,4 +816,4 @@ if __name__ == '__main__':
     # main(url)
 
     maintk()
-    
+
