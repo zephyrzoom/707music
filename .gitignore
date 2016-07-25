@@ -1,3 +1,2 @@
-__pycache__/
-douyu/__pycache__/
+/app/node_modules
 *.mp3
