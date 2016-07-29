@@ -3,14 +3,17 @@
   <head>
     <meta charset="utf-8">
     <title>music</title>
-
+    <script>
+      require('./player.js');
+    </script>
   </head>
   <body>
-    <script>
-      require('./test.js');
-    </script>
+    <input id="name" type="text">
+    <button id="search">搜索</button>
+    <button id="select">选择</button>
     <button id="start">开始</button>
     <button id="pause">暂停</button>
-    <button id="next" onclick="nextMusic()">下一首</button>
+    <button id="next">下一首</button>
+    <div id="result"></div>
   </body>
 </html>
