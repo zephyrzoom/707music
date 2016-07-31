@@ -1,64 +1,70 @@
 const neteaseAPI = require('NeteaseCloudMusicApi').api;
-const EventEmitter = require('events');
-const myEvent = new EventEmitter();
+const http = require('http');
 
-let audio = new Audio('http://m2.music.126.net/fzxb9-94aH0yYp8l-s6UvQ==/3250156383168327.mp3');
-audio.play();
+let audio = new Audio();
+let searchList;
+let mp3Url;
+let id;
+let playlist = [];
 
-window.onload = () => {
-  document.getElementById('start').onclick = () => {
-    audio.play();
-  }
-  document.getElementById('pause').onclick = () => {
-    audio.pause();
-  }
-
-  document.getElementById('search').onclick = () => {
-    const name = document.getElementById('name').value;
-    search(name);
-    myEvent.on('search', (data) => {
-      const result = data;
-      const render = document.getElementById('result');
-      render.innerHTML = result;
+exports.search = function search(name, callback) {
+    neteaseAPI.search(name, (data) => {
+        searchList = data;
+        if (callback) {
+            callback(data);
+        }
     });
-  }
+};
 
-  document.getElementById('select').onclick = () => {
-    const name = document.getElementById('name').value;
-    const render = document.getElementById('result');
-    render.innerHTML = select(render.innerHTML, name);
-  }
+exports.select = function select(num) {
+    id = JSON.parse(searchList).result.songs[num - 1].id;
+    console.log(id);
+    if (id) {
+        getMusicUrl();
+    }
+};
 
-  document.getElementById('next').onclick = () => {
-    const render = document.getElementById('result');
-    getMusicUrl(render.innerHTML);
-    myEvent.on('getMusic', (data) => {
-      audio.src = data;
-      audio.play();
+exports.cut = function cut() {
+    playlist.shift();
+    if (playlist.length) {
+        play();
+    } else {
+        audio.pause();
+    }
+};
+
+function getMusicUrl() {
+    neteaseAPI.song(id, (data) => {
+        console.log(data);
+        mp3Url = JSON.parse(data).songs[0].mp3Url;
+        http.get(mp3Url, (res) => {
+            console.log(res.statusCode);
+            if (res.statusCode !== 404) {
+                if (!playlist.length) {
+                    playlist.push(mp3Url);
+                    play();
+                } else {
+                    playlist.push(mp3Url);
+                }
+            }
+        });
     });
-  }
-}
-
-function search(name) {
-  neteaseAPI.search(name, (data) => {
-    myEvent.emit('search', data);
-  });
-}
-
-
-
-function select(songs, num) {
-  return JSON.parse(songs).result.songs[num-1].id;
-}
-
-function getMusicUrl(id) {
-  neteaseAPI.song(id, (data) => {
-    myEvent.emit('getMusic', JSON.parse(data).songs[0].mp3Url);
-  });
 }
 
 function getLrc(id) {
-  neteaseAPI.lrc(id, data => {
-    return JSON.parse(data).lrc.lyric;
-  });
+    neteaseAPI.lrc(id, data => {
+        return JSON.parse(data).lrc.lyric;
+    });
 }
+
+function play() {
+    audio.src = playlist[0];
+    audio.play();
+}
+
+audio.addEventListener('ended', () => {
+    playlist.shift();
+    if (playlist.length) {
+        play();
+    }
+});

@@ -1,48 +1,53 @@
-const {app} = require('electron');
-const {BrowserWindow} = require('electron');
+const electron = require('electron');
+const {app} = electron;
+const {BrowserWindow} = electron;
+const {ipcMain} = electron;
 
-let mainWindow;
+let danmu;
+let login;
 
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-  });
+function createWindow() {
+    login = new BrowserWindow({
+        width: 300,
+        height: 200,
+        autoHideMenuBar: true,
+        icon: __dirname + '/assets/favicon.ico',
+    });
+    login.loadURL(`file://${__dirname}/login.html`);
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(`file://${__dirname}/index.html`);
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null;
-  });
+    login.on('closed', () => {
+        login = null;
+    });
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
 
-// Quit when all windows are closed.
-app.on('window-all-closed', function () {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });
 
-app.on('activate', function () {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow();
-  }
+app.on('activate', () => {
+    if (danmu === null) {
+        createWindow();
+    }
+});
+
+ipcMain.on('login', (event, arg) => {
+    danmu = new BrowserWindow({
+        width: 300,
+        height: 500,
+        autoHideMenuBar: true,
+        icon: __dirname + '/assets/favicon.ico',
+    });
+    danmu.loadURL(`file://${__dirname}/index.html`);
+
+    danmu.on('closed', () => {
+        danmu = null;
+    });
+    danmu.webContents.on('did-finish-load', () => {
+        danmu.webContents.send('roomid', arg);
+    });
+    login.close();
 });

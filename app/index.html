@@ -1,19 +1,55 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title>music</title>
+    <title>707弹幕点歌姬</title>
+    <link rel="stylesheet" href="css/index.css">
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/photon.min.css">
+    <!-- Jquery -->
     <script>
-      require('./player.js');
+        window.$ = window.jQuery = require('./js/jquery.js');
+        require('./danmu.js');
     </script>
-  </head>
-  <body>
-    <input id="name" type="text">
-    <button id="search">搜索</button>
-    <button id="select">选择</button>
-    <button id="start">开始</button>
-    <button id="pause">暂停</button>
-    <button id="next">下一首</button>
-    <div id="result"></div>
-  </body>
+</head>
+
+<body>
+    <!-- <div>
+        <input id="name" type="text">
+        <button id="search">搜索</button>
+        <button id="select">选择</button>
+        <button id="start">开始</button>
+        <button id="pause">暂停</button>
+        <button id="next">下一首</button>
+        <div id="result"></div>
+    </div> -->
+
+    <div class="window">
+        <header class="toolbar toolbar-header">
+            <div class="toolbar-actions">
+                <div class="btn-group">
+                    <button class="btn btn-default">
+                        <span class="icon icon-home"></span> 房间号
+                        <span id="show-roomid" class="num"></span>
+                    </button>
+                    <button class="btn btn-default">
+                        <span class="icon icon-users"></span> 人气
+                        <span id="audience" class="num">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        <div class="window-content">
+            <div class="pane-group">
+                <div class="pane" id="pane">
+                </div>
+            </div>
+        </div>
+        <footer class="toolbar toolbar-footer">
+            <h1 class="title"><a id="github"><span class="icon icon-github"></span></a></h1>
+        </footer>
+    </div>
+</body>
+
 </html>
