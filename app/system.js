@@ -1,6 +1,5 @@
 const danmuParse = require('./parse');
 const player = require('./player');
-// const neteaseAPI = require('NeteaseCloudMusicApi').api;
 
 function getDanmu(danmu) {
     const diange = danmuParse(danmu[2]);
