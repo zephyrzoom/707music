@@ -184,6 +184,22 @@ $(document).ready(function() {
     githubLink.addEventListener('click', function(event) {
         shell.openExternal('http://github.com/zephyrzoom');
     });
+
+    const playlist = document.getElementById('playlist');
+    playlist.addEventListener('click', (event) => {
+        const {BrowserWindow} = require('electron').remote;
+        let playlistWin = new BrowserWindow({
+            width: 200,
+            height: 300,
+            autoHideMenuBar: true,
+            icon: __dirname + '/assets/favicon.ico',
+        });
+        playlistWin.loadURL(`file://${__dirname}/playlist.html`);
+
+        playlistWin.on('closed', () => {
+            playlistWin = null;
+        });
+    });
 });
 
 // 获取roomid

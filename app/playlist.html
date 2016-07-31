@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>播放列表</title>
+    <link rel="stylesheet" href="css/index.css">
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/photon.min.css">
+    <!-- Jquery -->
+    <script>
+        window.$ = window.jQuery = require('./js/jquery.js');
+        require('./playlist');
+    </script>
+</head>
+<body>
+    <div class="window">
+        <div class="window-content">
+            <div class="pane-group">
+                <div class="pane" id="pane">
+                    <table class='table-striped'>
+                        <tbody id='playlist'>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <footer class="toolbar toolbar-footer">
+            <h1 class="title"><a id="github"><span class="icon icon-github"></span></a></h1>
+        </footer>
+    </div>
+</body>
+
+</html>

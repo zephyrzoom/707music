@@ -1,6 +1,7 @@
 const neteaseAPI = require('NeteaseCloudMusicApi').api;
 const http = require('http');
 const logger = require('./log');
+const { ipcMain } = require('electron').remote;
 
 let audio = new Audio();
 let searchList;
@@ -76,4 +77,8 @@ audio.addEventListener('ended', () => {
     if (playlist.length) {
         play();
     }
+});
+
+ipcMain.on('getList', (event, arg) => {
+    event.sender.send('playlist', playlist);
 });
