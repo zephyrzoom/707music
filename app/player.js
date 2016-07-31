@@ -1,11 +1,13 @@
 const neteaseAPI = require('NeteaseCloudMusicApi').api;
 const http = require('http');
+const logger = require('./log');
 
 let audio = new Audio();
 let searchList;
 let mp3Url;
 let id;
 let playlist = [];
+let musicName;
 
 exports.search = function search(name, callback) {
     neteaseAPI.search(name, (data) => {
@@ -25,7 +27,9 @@ exports.select = function select(num) {
 };
 
 exports.cut = function cut() {
+    logger.log('切歌成功');
     playlist.shift();
+    logger.updateList(playlist);
     if (playlist.length) {
         play();
     } else {
@@ -36,16 +40,20 @@ exports.cut = function cut() {
 function getMusicUrl() {
     neteaseAPI.song(id, (data) => {
         console.log(data);
-        mp3Url = JSON.parse(data).songs[0].mp3Url;
+        const song = JSON.parse(data).songs[0];
+        musicName = song.name;
+        mp3Url = song.mp3Url;
         http.get(mp3Url, (res) => {
             console.log(res.statusCode);
             if (res.statusCode !== 404) {
+                logger.log('点歌成功');
                 if (!playlist.length) {
-                    playlist.push(mp3Url);
+                    playlist.push([musicName, mp3Url]);
                     play();
                 } else {
-                    playlist.push(mp3Url);
+                    playlist.push([musicName, mp3Url]);
                 }
+                logger.updateList(playlist);
             }
         });
     });
@@ -58,12 +66,13 @@ function getLrc(id) {
 }
 
 function play() {
-    audio.src = playlist[0];
+    audio.src = playlist[0][1];
     audio.play();
 }
 
 audio.addEventListener('ended', () => {
     playlist.shift();
+    logger.updateList(playlist);
     if (playlist.length) {
         play();
     }
