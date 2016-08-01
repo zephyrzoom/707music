@@ -13,7 +13,7 @@ function createWindow() {
         autoHideMenuBar: true,
         icon: __dirname + '/assets/favicon.ico',
     });
-    login.loadURL(`file://${__dirname}/login.html`);
+    login.loadURL(`file://${__dirname}/render/login.html`);
 
     login.on('closed', () => {
         login = null;
@@ -41,7 +41,7 @@ ipcMain.on('login', (event, arg) => {
         autoHideMenuBar: true,
         icon: __dirname + '/assets/favicon.ico',
     });
-    danmu.loadURL(`file://${__dirname}/index.html`);
+    danmu.loadURL(`file://${__dirname}/render/index.html`);
 
     danmu.on('closed', () => {
         danmu = null;

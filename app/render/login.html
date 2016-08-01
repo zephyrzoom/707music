@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>707弹幕点歌姬</title>
-    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="../css/index.css">
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/photon.min.css">
+    <link rel="stylesheet" href="../css/photon.min.css">
     <!-- Jquery -->
     <script>
-        window.$ = window.jQuery = require('./js/jquery.js');
+        window.$ = window.jQuery = require('../js/jquery.js');
         require('./login.js');
     </script>
 
@@ -24,7 +24,7 @@
                         <div class="form-group">
                             <h5>请输入房间号</h5>
                             <input type="text" class="form-control" placeholder="房间号" id="roomid" maxlength="10" autofocus="autofocus">
-                            <button onclick="setRoomId()" class="btn btn-primary btn-large">连接</button>
+                            <button id="room-btn" class="btn btn-primary btn-large">连接</button>
                         </div>
                     </form>
                 </div>

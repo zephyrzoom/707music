@@ -1,6 +1,6 @@
 const neteaseAPI = require('NeteaseCloudMusicApi').api;
 const http = require('http');
-const logger = require('./log');
+const logger = require('../util/log');
 const { ipcMain } = require('electron').remote;
 
 let audio = new Audio();
@@ -40,10 +40,10 @@ exports.cut = function cut() {
 
 function getMusicUrl() {
     neteaseAPI.song(id, (data) => {
-        console.log(data);
         const song = JSON.parse(data).songs[0];
         musicName = song.name;
         mp3Url = song.mp3Url;
+        console.log('get music url', mp3Url);
         http.get(mp3Url, (res) => {
             console.log(res.statusCode);
             if (res.statusCode !== 404) {
