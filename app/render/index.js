@@ -1,6 +1,12 @@
-const danmu = require('../danmu/danmu');
-const { shell, ipcRenderer } = require('electron');
+const electron = require('electron');
+const { shell, ipcRenderer } = electron;
+const { BrowserWindow, ipcMain } = electron.remote;
+
 const diange = require('../player/system');
+const danmu = require('../danmu/danmu');
+const config = require('../util/config');
+
+let cfg;
 
 // 处理格式化的弹幕
 function splitDanmu(totalDanmu) {
@@ -17,10 +23,12 @@ function updateMsg(nn, txt) {
     const pane = document.getElementById('pane');
     pane.scrollTop = pane.scrollHeight;
 }
+
 // 更新观众人数
 function updateAudience(content) {
     $('#audience').text(content);
 }
+
 // 设置房间号
 function setRoomId(roomid) {
     $('#show-roomid').text(roomid);
@@ -33,31 +41,50 @@ function setRoomId(roomid) {
 
 // github链接
 $(document).ready(function() {
-    const githubLink = document.getElementById('github');
-    githubLink.addEventListener('click', function(event) {
-        shell.openExternal('http://github.com/zephyrzoom');
-    });
-
     const playlist = document.getElementById('playlist');
     playlist.addEventListener('click', (event) => {
-        const { BrowserWindow } = require('electron').remote;
         let playlistWin = new BrowserWindow({
             width: 200,
             height: 300,
             autoHideMenuBar: true,
             icon: __dirname + '../assets/favicon.ico',
         });
-        playlistWin.loadURL(`file://${__dirname}/../render/playlist.html`);
+        playlistWin.loadURL(`file://${__dirname}/playlist.html`);
 
         playlistWin.on('closed', () => {
             playlistWin = null;
         });
+    });
+
+    const settings = document.getElementById('settings');
+    settings.addEventListener('click', (event) => {
+        let settingsWin = new BrowserWindow({
+            width: 200,
+            height: 100,
+            autoHideMenuBar: true,
+            icon: __dirname + '../assets/favicon.ico',
+        });
+        settingsWin.loadURL(`file://${__dirname}/settings.html`);
+
+        settingsWin.on('closed', () => {
+            settingsWin = null;
+        });
+    });
+
+    config.getConfig((data) => {
+        cfg = data;
     });
 });
 
 // 获取roomid
 ipcRenderer.on('roomid', (event, arg) => {
     setRoomId(arg);
+});
+
+
+ipcMain.on('update-config', (event, arg) => {
+    cfg = arg;
+    console.log('update config', cfg);
 });
 
 function formatMsg(msg) {
@@ -73,7 +100,9 @@ function formatMsg(msg) {
     if (msg.type == DANMU_TYPE) {
         const identity = msg.data.from.identity;
         let nickName = msg.data.from.nickName;
-        diange([0, nickName, content]); // 处理点歌
+        if (cfg.music == 'true') {  // 设置可以开启点歌则处理点歌
+            diange([0, nickName, content]);
+        }
         if (msg.data.from.sp_identity == SP_MANAGER) {
             nickName = '*超管*' + nickName;
         }

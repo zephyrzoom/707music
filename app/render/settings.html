@@ -2,18 +2,17 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
-    <title>707弹幕点歌姬</title>
+    <meta charset="utf-8">
+    <title>系统设置</title>
     <link rel="stylesheet" href="../css/index.css">
     <!-- Stylesheets -->
     <link rel="stylesheet" href="../css/photon.min.css">
     <!-- Jquery -->
     <script>
         window.$ = window.jQuery = require('../js/jquery.js');
-        require('./login.js');
         require('./github');
+        require('./settings');
     </script>
-
 </head>
 
 <body>
@@ -21,13 +20,10 @@
         <div class="window-content">
             <div class="pane-group">
                 <div class="pane" id="pane">
-                    <form>
-                        <div class="form-group">
-                            <h5>请输入房间号</h5>
-                            <input type="text" class="form-control" placeholder="房间号" id="roomid" maxlength="10" autofocus="autofocus">
-                            <button id="room-btn" class="btn btn-primary btn-large">连接</button>
-                        </div>
-                    </form>
+                    <div id="set">
+                        <button class="btn" id="music"></button>
+                        <button class="btn" id="desktopDanmu"></button>
+                    </div>
                 </div>
             </div>
         </div>

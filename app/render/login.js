@@ -6,11 +6,6 @@ function setRoomId() {
 }
 // github链接
 $(document).ready(function() {
-    const { shell } = require('electron');
-    const githubLink = document.getElementById('github');
-    githubLink.addEventListener('click', function(event) {
-        shell.openExternal('http://github.com/zephyrzoom');
-    });
     // 回车登录
     $('#roomid').keypress(function(event) {
         if (event.which == 13) {

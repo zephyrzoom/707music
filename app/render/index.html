@@ -11,6 +11,7 @@
     <script>
         window.$ = window.jQuery = require('../js/jquery.js');
         require('./index.js');
+        require('./github');
     </script>
 </head>
 
@@ -19,7 +20,7 @@
         <header class="toolbar toolbar-header">
             <div class="toolbar-actions">
                 <div class="btn-group">
-                    <button class="btn btn-default">
+                    <button class="btn btn-default" id="settings">
                         <span class="icon icon-home"></span> 房间号
                         <span id="show-roomid" class="num"></span>
                     </button>
