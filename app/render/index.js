@@ -7,6 +7,8 @@ const danmu = require('../danmu/danmu');
 const config = require('../util/config');
 
 let cfg;
+let desktopDanmuWin;
+let settingsWin;
 
 // 处理格式化的弹幕
 function splitDanmu(totalDanmu) {
@@ -22,6 +24,12 @@ function updateMsg(nn, txt) {
     // 滚动条始终在最下面
     const pane = document.getElementById('pane');
     pane.scrollTop = pane.scrollHeight;
+
+
+    if (cfg.desktopDanmu == 'true') {
+        console.log('sended');
+        desktopDanmuWin.webContents.send('danmu', nn, txt);
+    }
 }
 
 // 更新观众人数
@@ -58,7 +66,7 @@ $(document).ready(function() {
 
     const settings = document.getElementById('settings');
     settings.addEventListener('click', (event) => {
-        let settingsWin = new BrowserWindow({
+        settingsWin = new BrowserWindow({
             width: 200,
             height: 100,
             autoHideMenuBar: true,
@@ -73,6 +81,9 @@ $(document).ready(function() {
 
     config.getConfig((data) => {
         cfg = data;
+        if (cfg.desktopDanmu == 'true') {
+            createDesktopDanmu();
+        }
     });
 });
 
@@ -81,11 +92,38 @@ ipcRenderer.on('roomid', (event, arg) => {
     setRoomId(arg);
 });
 
-
 ipcMain.on('update-config', (event, arg) => {
     cfg = arg;
-    console.log('update config', cfg);
 });
+
+
+ipcMain.on('update-desktopDanmu', (event, arg) => {
+    cfg = arg;
+    if (cfg.desktopDanmu == 'true') {
+        createDesktopDanmu();
+    } else if (cfg.desktopDanmu == 'false') {
+        desktopDanmuWin.close();
+    }
+});
+
+function createDesktopDanmu() {
+    desktopDanmuWin = new BrowserWindow({
+        width: 200,
+        height: 300,
+        autoHideMenuBar: true,
+        icon: __dirname + '../assets/favicon.ico',
+        frame: false,
+        transparent: true,
+    });
+    desktopDanmuWin.loadURL(`file://${__dirname}/frameless.html`);
+    desktopDanmuWin.setAlwaysOnTop(true);
+    // desktopDanmuWin.setIgnoreMouseEvents(true);
+    desktopDanmuWin.on('closed', () => {
+        desktopDanmuWin = null;
+        cfg.desktopDanmu = 'false';
+        settingsWin.webContents.send('close-desktopDanmu');
+    });
+}
 
 function formatMsg(msg) {
     const DANMU_TYPE = '1';

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+        <script>
+            window.onload = () => {
+                const add = document.getElementById('add');
+                const c = document.getElementById('content');
+                add.addEventListener('click', () => {
+                    c.innerHTML += '<p>aaaaa</p>';
+                    window.scrollTo(c.scrollHeight);
+                    // c.scrollIntoView(false);
+                });
+            };
+        </script>
+    </head>
+    <body>
+
+        <div id="content">
+        </div>
+        <button id="add">add</button>
+    </body>
+</html>

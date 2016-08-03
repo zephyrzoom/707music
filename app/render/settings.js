@@ -38,7 +38,11 @@ $(document).ready(() => {
             cfg.desktopDanmu = 'true';
             $('#desktopDanmu').removeClass('btn-positive').addClass('btn-negative').text('关闭弹幕');
         }
-        ipcRenderer.send('update-config', cfg);
+        ipcRenderer.send('update-desktopDanmu', cfg);
         config.setConfig(cfg);
     });
+});
+
+ipcRenderer.on('close-desktopDanmu', () => {
+    $('#desktopDanmu').removeClass('btn-negative').addClass('btn-positive').text('开启弹幕');
 });

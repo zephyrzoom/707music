@@ -36,7 +36,7 @@ app.on('activate', () => {
 
 ipcMain.on('login', (event, arg) => {
     danmu = new BrowserWindow({
-        width: 300,
+        width: 350,
         height: 500,
         autoHideMenuBar: true,
         icon: __dirname + '/assets/favicon.ico',

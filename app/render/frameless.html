@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>桌面弹幕</title>
+    <script>
+        window.$ = window.jQuery = require('../js/jquery.js');
+        require('./frameless');
+    </script>
+    <style>
+        body {
+            overflow: hidden;
+            -webkit-app-region: drag;
+
+        }
+
+        button {
+            /*display: none;*/
+            -webkit-app-region: no-drag;
+            position: fixed;
+
+        }
+
+        #wrap {
+            width: 190px;
+            height: 290px;
+            border: 1px solid;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div id="wrap">
+        <button class="lock">锁定</button>
+        <div id="danmu"></div>
+    </div>
+</body>
+
+</html>
