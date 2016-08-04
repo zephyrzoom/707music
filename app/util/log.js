@@ -1,8 +1,16 @@
 const fs = require('fs');
 const util = require('util');
 
-const log_file = fs.createWriteStream(__dirname + '/../../log/log.txt', {flags : 'w'});
-const playlist_file = __dirname + '/../player/playlist.txt';
+let log_file;
+let playlist_file;
+if (process.platform === 'darwin') {
+    log_file = fs.createWriteStream(__dirname + '/../../../../../log/log.txt', {flags : 'w'});
+    playlist_file = __dirname + '/../../../../../log/playlist.txt';
+} else {
+    log_file = fs.createWriteStream(__dirname + '/../../log/log.txt', {flags : 'w'});
+    playlist_file = __dirname + '/../../log/playlist.txt';
+}
+
 
 exports.log = function log(message) {
     message = new Date().toLocaleString() + " " + message;

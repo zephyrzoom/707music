@@ -12,22 +12,25 @@
         body {
             overflow: hidden;
             -webkit-app-region: drag;
-
         }
 
         button {
             /*display: none;*/
             -webkit-app-region: no-drag;
             position: fixed;
-
         }
 
         #wrap {
-            width: 190px;
+            width: 240px;
             height: 290px;
             border: 1px solid;
         }
 
+        select {
+            -webkit-app-region: no-drag;
+            position: fixed;
+            left: 50px;
+        }
     </style>
 </head>
 
@@ -35,6 +38,17 @@
 
     <div id="wrap">
         <button class="lock">锁定</button>
+        <select name="select">
+            <option value="black" selected>黑</option>
+            <option value="red">红</option>
+            <option value="yellow">黄</option>
+            <option value="blue">蓝</option>
+            <option value="white">白</option>
+            <option value="green">绿</option>
+            <option value="gray">灰</option>
+            <option value="brown">棕</option>
+            <option value="purple">紫</option>
+        </select>
         <div id="danmu"></div>
     </div>
 </body>

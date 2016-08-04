@@ -1,8 +1,8 @@
 const fs = require('fs');
 
 const CONFIG_PATH = __dirname + '/../config.json';
-let config;
 
+let config;
 
 exports.getConfig = function getConfig(callback) {
     fs.readFile(CONFIG_PATH, (err, data) => {

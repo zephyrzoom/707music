@@ -7,8 +7,9 @@ const danmu = require('../danmu/danmu');
 const config = require('../util/config');
 
 let cfg;
-let desktopDanmuWin;
-let settingsWin;
+let desktopDanmuWin = null;
+let settingsWin = null;
+let playlistWin = null;
 
 // 处理格式化的弹幕
 function splitDanmu(totalDanmu) {
@@ -51,37 +52,41 @@ function setRoomId(roomid) {
 $(document).ready(function() {
     const playlist = document.getElementById('playlist');
     playlist.addEventListener('click', (event) => {
-        let playlistWin = new BrowserWindow({
-            width: 200,
-            height: 300,
-            autoHideMenuBar: true,
-            icon: __dirname + '../assets/favicon.ico',
-        });
-        playlistWin.loadURL(`file://${__dirname}/playlist.html`);
+        if (playlistWin === null) {
+            playlistWin = new BrowserWindow({
+                width: 200,
+                height: 300,
+                autoHideMenuBar: true,
+                icon: __dirname + '../assets/favicon.ico',
+            });
+            playlistWin.loadURL(`file://${__dirname}/playlist.html`);
 
-        playlistWin.on('closed', () => {
-            playlistWin = null;
-        });
+            playlistWin.on('closed', () => {
+                playlistWin = null;
+            });
+        }
     });
 
     const settings = document.getElementById('settings');
     settings.addEventListener('click', (event) => {
-        settingsWin = new BrowserWindow({
-            width: 200,
-            height: 100,
-            autoHideMenuBar: true,
-            icon: __dirname + '../assets/favicon.ico',
-        });
-        settingsWin.loadURL(`file://${__dirname}/settings.html`);
+        if (settingsWin === null) {
+            settingsWin = new BrowserWindow({
+                width: 200,
+                height: 150,
+                autoHideMenuBar: true,
+                icon: __dirname + '../assets/favicon.ico',
+            });
+            settingsWin.loadURL(`file://${__dirname}/settings.html`);
 
-        settingsWin.on('closed', () => {
-            settingsWin = null;
-        });
+            settingsWin.on('closed', () => {
+                settingsWin = null;
+            });
+        }
     });
 
     config.getConfig((data) => {
         cfg = data;
-        if (cfg.desktopDanmu == 'true') {
+        if (cfg.desktopDanmu == 'true') {   // 桌面弹幕自动打开
             createDesktopDanmu();
         }
     });
@@ -92,11 +97,12 @@ ipcRenderer.on('roomid', (event, arg) => {
     setRoomId(arg);
 });
 
+// 更新配置
 ipcMain.on('update-config', (event, arg) => {
     cfg = arg;
 });
 
-
+// 更新桌面弹幕设置
 ipcMain.on('update-desktopDanmu', (event, arg) => {
     cfg = arg;
     if (cfg.desktopDanmu == 'true') {
@@ -107,21 +113,25 @@ ipcMain.on('update-desktopDanmu', (event, arg) => {
 });
 
 function createDesktopDanmu() {
+    // 桌面弹幕窗口
     desktopDanmuWin = new BrowserWindow({
-        width: 200,
+        width: 250,
         height: 300,
         autoHideMenuBar: true,
         icon: __dirname + '../assets/favicon.ico',
         frame: false,
         transparent: true,
+        resizable: false
     });
     desktopDanmuWin.loadURL(`file://${__dirname}/frameless.html`);
     desktopDanmuWin.setAlwaysOnTop(true);
-    // desktopDanmuWin.setIgnoreMouseEvents(true);
     desktopDanmuWin.on('closed', () => {
         desktopDanmuWin = null;
-        cfg.desktopDanmu = 'false';
-        settingsWin.webContents.send('close-desktopDanmu');
+        cfg.desktopDanmu = 'false'; // 桌面窗口关闭要更新设置
+        if (settingsWin !== null) { // 设置窗口打开时需要更新设置按钮
+            settingsWin.webContents.send('close-desktopDanmu');
+        }
+
     });
 }
 
@@ -150,26 +160,32 @@ function formatMsg(msg) {
             nickName = '*主播*' + nickName;
         }
         updateMsg(nickName, content);
-        new Notification(nickName, {
-            body: content
-        });
+        if (cfg.desktopDanmu == 'false') {
+            new Notification(nickName, {
+                body: content
+            });
+        }
     } else if (msg.type == BAMBOO_TYPE) {
         nickName = msg.data.from.nickName;
         diange([1, nickName, content]); // 送竹子送经验
         content = '送给主播[' + content + ']个竹子';
         updateMsg(nickName, content);
-        new Notification(nickName, {
-            body: content
-        });
+        if (cfg.desktopDanmu == 'false') {
+            new Notification(nickName, {
+                body: content
+            });
+        }
     } else if (msg.type == TU_HAO_TYPE) {
         nickName = msg.data.from.nickName;
         price = msg.data.content.price;
         diange([2, nickName, content]); // 送猫币送经验
         content = '送给主播[' + price + ']个猫币';
         updateMsg(nickName, content);
-        new Notification(nickName, {
-            body: content
-        });
+        if (cfg.desktopDanmu == 'false') {
+            new Notification(nickName, {
+                body: content
+            });
+        }
     } else if (msg.type == AUDIENCE_TYPE) {
         updateAudience(content);
     }

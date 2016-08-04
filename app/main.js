@@ -1,7 +1,7 @@
 const electron = require('electron');
-const {app} = electron;
-const {BrowserWindow} = electron;
-const {ipcMain} = electron;
+const { app } = electron;
+const { BrowserWindow } = electron;
+const { ipcMain } = electron;
 
 let danmu;
 let login;
