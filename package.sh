@@ -1,4 +1,52 @@
 #!/usr/bin/env bash
-electron-packager app 707music --platform=darwin --arch=x64
-cd 707music*
+
+appName="707music"
+packagePath="707music*"
+
+rm -rf $packagePath
+
+if [ $# -lt 1 ]; then
+    sh package.sh --help
+    return
+fi
+
+case $1 in
+    'help' | '--help' )
+        echo 'Usage: sh package.sh -p <platform>'
+        echo '  -p:  w32, w64, l32, l64, osx'
+        echo 'Example: package.sh -p osx'
+        return
+    ;;
+
+    '-p' )
+        case $2 in
+            w32 )
+                electron-packager app $appName --platform=win32 --arch=ia32
+            ;;
+
+            w64 )
+                electron-packager app $appName --platform=win32 --arch=x64
+            ;;
+
+            l32 )
+                electron-packager app $appName --platform=linux --arch=ia32
+            ;;
+
+            l64 )
+                electron-packager app $appName --platform=linux --arch=x64
+            ;;
+
+            osx )
+                electron-packager app $appName --platform=darwin --arch=x64
+            ;;
+
+            * )
+                sh package.sh --help
+                return
+            ;;
+        esac
+    ;;
+esac
+
+cd $packagePath
 mkdir log
