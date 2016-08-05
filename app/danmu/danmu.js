@@ -75,7 +75,7 @@ function start(chatInfo, callback) {
     });
     setInterval(function() {
         sendKeepalive(s);
-    }, 300000);
+    }, 150000);
 }
 
 function sendData(s, msg) {
