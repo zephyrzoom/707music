@@ -5,6 +5,7 @@ function getDanmu(danmu) {
     const diange = danmuParse(danmu[2]);
     if (diange && diange[0] === 'diange') {
         player.search(diange[1], () => {
+            // 默认选择第一首歌
             player.select(1);
         });
     }

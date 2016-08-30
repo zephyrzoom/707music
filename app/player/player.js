@@ -20,7 +20,7 @@ exports.search = function search(name, callback) {
 };
 
 exports.select = function select(num) {
-    id = JSON.parse(searchList).result.songs[num - 1].id;
+    id = JSON.parse(searchList)[num - 1].id;
     console.log(id);
     if (id) {
         getMusicUrl();

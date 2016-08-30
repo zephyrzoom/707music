@@ -1,9 +1,10 @@
 const http = require('http');
 const net = require('net');
 
+const CHATROOM = 'http://riven.panda.tv/chatroom/getinfo?roomid=';
 
 exports.getChatInfo = function getChatInfo(roomid, callback) {
-    http.get('http://www.panda.tv/ajax_chatinfo?roomid=' + roomid, function(res) {
+    http.get(CHATROOM + roomid, function(res) {
         res.on('data', function(chunk) {
             const json = JSON.parse(chunk);
             const jsonData = json.data;
